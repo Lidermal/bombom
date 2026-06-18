@@ -4,11 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Consumo TI</title>
+    <!-- Favicon de Chocolate -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍫</text></svg>">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SweetAlert2 para Alertas Personalizados -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
         .vertical-text {
             writing-mode: vertical-rl;
@@ -23,7 +28,8 @@
 </head>
 <body class="bg-gray-100 font-sans flex h-screen overflow-hidden">
 
-    <aside class="w-64 bg-gray-900 text-white flex flex-col">
+    <!-- Sidebar Menu -->
+    <aside class="w-64 bg-gray-900 text-white flex flex-col z-20">
         <div class="h-16 flex items-center justify-center border-b border-gray-800">
             <h1 class="text-xl font-bold"><i class="fa-solid fa-candy-cane text-red-500 mr-2"></i>TI Consumo</h1>
         </div>
@@ -43,7 +49,8 @@
         </nav>
     </aside>
 
-    <main class="flex-1 flex flex-col h-full overflow-hidden">
+    <!-- Área Principal -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
         <header class="h-16 bg-white shadow flex items-center justify-between px-6 z-10">
             <h2 class="text-xl font-semibold text-gray-800" id="titulo-aba">Visão Geral</h2>
             <div class="flex items-center space-x-3 bg-gray-100 p-2 rounded-lg">
@@ -54,12 +61,14 @@
 
         <div class="flex-1 overflow-auto p-6 relative">
             
-            <div id="loading" class="absolute inset-0 bg-white bg-opacity-75 flex flex-col items-center justify-center z-50 hidden">
+            <!-- LOADING OVERLAY -->
+            <div id="loading" class="absolute inset-0 bg-white bg-opacity-90 flex flex-col items-center justify-center z-50 hidden">
                 <i class="fa-solid fa-spinner fa-spin text-4xl text-blue-600 mb-2"></i>
-                <p class="text-gray-600 font-medium">Sincronizando com Banco de Dados...</p>
+                <p class="text-gray-600 font-medium">Sincronizando com o Banco...</p>
             </div>
 
-            <section id="aba-dashboard" class="space-y-6">
+            <!-- ABA: DASHBOARD -->
+            <section id="aba-dashboard" class="hidden space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
                         <p class="text-gray-500 text-sm">Total Faturado (Geral)</p>
@@ -70,7 +79,7 @@
                         <h3 class="text-2xl font-bold text-gray-800" id="dash-lucro">R$ 0,00</h3>
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500">
-                        <p class="text-gray-500 text-sm">Itens Vendidos (Semana Selecionada)</p>
+                        <p class="text-gray-500 text-sm">Itens Vendidos (Semana Atual)</p>
                         <h3 class="text-2xl font-bold text-gray-800" id="dash-itens">0</h3>
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
@@ -80,22 +89,25 @@
                 </div>
             </section>
 
-            <section id="aba-vendas" class="hidden space-y-6">
+            <!-- ABA: VENDAS -->
+            <section id="aba-vendas" class="space-y-6">
                 <div class="bg-gray-100 p-4 rounded-lg shadow-inner mb-6 border-b border-gray-200">
                     <div class="flex justify-between items-center text-sm">
                         <span class="font-semibold text-gray-700" id="vendas-semana-info">Semana: ... a ...</span>
-                        <span class="text-gray-500" id="vendas-gerado-info">Gerado: ...</span>
+                        <span class="text-gray-500" id="vendas-gerado-info">Atualizado: ...</span>
                     </div>
                 </div>
 
                 <div id="container-vendas-semanais" class="space-y-8">
-                    </div>
+                    <!-- Injetado via JS -->
+                </div>
 
                 <button class="fixed bottom-6 right-6 bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg hover:bg-blue-700 transition z-20" onclick="abrirModalAddVenda()">
                     <i class="fa-solid fa-plus mr-1"></i> Registrar Consumo
                 </button>
             </section>
 
+            <!-- ABA: ESTOQUE -->
             <section id="aba-estoque" class="hidden space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-medium">Controle de Estoque</h3>
@@ -104,9 +116,11 @@
                     </button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4" id="grid-estoque">
-                    </div>
+                    <!-- Injetado via JS -->
+                </div>
             </section>
 
+            <!-- ABA: FINANCEIRO -->
             <section id="aba-financeiro" class="hidden space-y-4">
                 <h3 class="text-lg font-medium">Acertos e Pagamentos</h3>
                 <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -118,13 +132,15 @@
                             </tr>
                         </thead>
                         <tbody id="tabela-financeiro" class="divide-y divide-gray-200">
-                            </tbody>
+                            <!-- Injetado via JS -->
+                        </tbody>
                     </table>
                 </div>
             </section>
         </div>
     </main>
 
+    <!-- MODAL: ESTOQUE -->
     <div id="modal-estoque" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg w-96 p-6">
             <h3 class="text-lg font-bold mb-4">Adicionar / Atualizar Estoque</h3>
@@ -152,6 +168,7 @@
         </div>
     </div>
 
+    <!-- MODAL: REGISTRAR/EDITAR CONSUMO -->
     <div id="modal-consumo" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg w-full max-w-2xl p-6 flex flex-col max-h-[90vh]">
             <h3 class="text-lg font-bold mb-4" id="titulo-modal-consumo">Registrar Consumo</h3>
@@ -169,7 +186,8 @@
 
             <label class="block text-sm font-bold text-gray-700 mb-2">Selecione as Quantidades:</label>
             <div id="container-produtos-consumo" class="flex-1 overflow-y-auto custom-scrollbar border rounded p-3 grid grid-cols-2 gap-x-6 gap-y-3 bg-gray-50">
-                </div>
+                <!-- JS vai injetar os inputs aqui -->
+            </div>
 
             <div class="mt-4 border-t pt-3 flex-shrink-0">
                 <label class="block text-sm text-gray-600 mb-1">Observações (Opcional)</label>
