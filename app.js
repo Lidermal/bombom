@@ -1,43 +1,53 @@
 /* ==================================================
-   1. CONFIGURAÇÃO SUPABASE (AGUARDANDO PASSO 3)
+   1. CONFIGURAÇÃO SUPABASE
    ================================================== */
-const SUPABASE_URL = 'SUA_URL_AQUI_NO_FUTURO';
-const SUPABASE_KEY = 'SUA_CHAVE_AQUI_NO_FUTURO';
+const SUPABASE_URL = 'https://jyjrzczpuyomatskebfk.supabase.co'; // Sem o rest/v1
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5anJ6Y3pwdXlvbWF0c2tlYmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDExMDcsImV4cCI6MjA5NzM3NzEwN30.texrp9Ayt6rzmQyCYDS1UgJiKm6yUm4-PFq4lIj47hE';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ==================================================
    2. VARIÁVEIS GLOBAIS E ESTADO
    ================================================== */
 let semanaSelecionada = null; 
+let estoqueGlobal = [];
+let vendasGlobal = [];
+let vendaEmEdicaoId = null;
 
-// A SUA LISTA EXATA DE PRODUTOS
-let mockEstoque = [
-    { id: 1, nome: 'Café', qtd: 20, preco: 1.00 },
-    { id: 2, nome: 'Chocolate', qtd: 15, preco: 2.50 },
-    { id: 3, nome: 'Chocolate 50%', qtd: 10, preco: 2.50 },
-    { id: 4, nome: 'Chocolate c/ Morango', qtd: 10, preco: 2.50 },
-    { id: 5, nome: 'Chocolate c/ Churros', qtd: 5, preco: 2.50 },
-    { id: 6, nome: 'Coco', qtd: 12, preco: 2.50 },
-    { id: 7, nome: 'Coco c/ chocolate', qtd: 8, preco: 2.50 },
-    { id: 8, nome: 'Castanha', qtd: 10, preco: 2.50 },
-    { id: 9, nome: 'Churros', qtd: 6, preco: 2.50 },
-    { id: 10, nome: 'Doce de Leite c/ Coco', qtd: 9, preco: 2.50 },
-    { id: 11, nome: 'Limão', qtd: 15, preco: 2.50 },
-    { id: 12, nome: 'Maracujá', qtd: 14, preco: 2.50 },
-    { id: 13, nome: 'Ninho c/ Morango', qtd: 10, preco: 2.50 },
-    { id: 14, nome: 'Paçoca', qtd: 8, preco: 2.50 },
-    { id: 15, nome: 'Oreo', qtd: 5, preco: 2.50 },
-    { id: 16, nome: 'Cone Trufado', qtd: 6, preco: 12.00 },
-    { id: 17, nome: 'Brownie', qtd: 4, preco: 6.00 }
-];
-
-// Dados da venda, salvando apenas o ID do produto e a quantidade comprada
-let mockVendas_Weekly = [
-    { id: 1, data: '02/06/2026', colaborador: 'Douglas', itens: [{ id_produto: 2, qtd: 2 }, { id_produto: 1, qtd: 1 }], obs: 'Pago no PIX', total_devido: 6.00 },
-    { id: 2, data: '03/06/2026', colaborador: 'Janaelson', itens: [{ id_produto: 16, qtd: 1 }], obs: '', total_devido: 12.00 }
-];
+// Função para exibir tela de carregamento
+function toggleLoading(show) {
+    document.getElementById('loading').classList.toggle('hidden', !show);
+}
 
 /* ==================================================
-   3. FUNÇÕES DE INTERFACE (UI) & LÓGICA DE SEMANA
+   3. INICIALIZAÇÃO DE DADOS (SUPABASE FETCH)
+   ================================================== */
+async function carregarDadosDoBanco() {
+    toggleLoading(true);
+    
+    // Buscar Estoque
+    const { data: produtos, error: errProd } = await supabase.from('produtos').select('*').order('nome');
+    if (produtos) estoqueGlobal = produtos;
+
+    // Buscar Vendas (Com os itens e nomes de produtos via chave estrangeira)
+    const { data: vendas, error: errVenda } = await supabase
+        .from('vendas')
+        .select(`
+            id, colaborador, data_venda, observacao, total_devido, criado_em,
+            itens_venda ( id, qtd, preco_unitario, produto_id, produtos ( nome ) )
+        `)
+        .order('data_venda', { ascending: false });
+        
+    if (vendas) vendasGlobal = vendas;
+
+    // Inicializa interface
+    popularWeekSelector();
+    mudarAba('vendas'); // Aba padrão
+    
+    toggleLoading(false);
+}
+
+/* ==================================================
+   4. NAVEGAÇÃO E LÓGICA DE SEMANA
    ================================================== */
 function mudarAba(abaId) {
     document.getElementById('aba-dashboard').classList.add('hidden');
@@ -69,60 +79,75 @@ function fecharModal(id) { document.getElementById(id).classList.add('hidden'); 
 function getStartAndEndOfWeek(date) {
     let day = date.getDay();
     let diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    let start = new Date(date.setDate(diff));
+    let start = new Date(date.setHours(0,0,0,0));
+    start.setDate(diff);
+    
     let end = new Date(start);
-    end.setDate(start.getDate() + 4);
+    end.setDate(start.getDate() + 4); // Sexta-feira
+    end.setHours(23,59,59,999);
     return { start, end };
 }
 
 function calcularSemanaAtual() {
-    let hoje = new Date();
-    semanaSelecionada = getStartAndEndOfWeek(new Date(hoje));
+    semanaSelecionada = getStartAndEndOfWeek(new Date());
 }
 
 function popularWeekSelector() {
     const selector = document.getElementById('semana-filtro');
     selector.innerHTML = '';
-    let { start: semanaAtualStart } = getStartAndEndOfWeek(new Date());
+    
+    let semanasSet = new Set();
+    let { start: atualStart } = getStartAndEndOfWeek(new Date());
+    semanasSet.add(atualStart.getTime()); // Sempre adiciona a semana atual
 
-    for (let i = 0; i < 5; i++) {
-        let diff = semanaAtualStart.getDate() - (i * 7);
-        let start = new Date(semanaAtualStart);
-        start.setDate(diff);
+    // Vasculha as vendas para adicionar outras semanas que possuem registro
+    vendasGlobal.forEach(v => {
+        let [a, m, d] = v.data_venda.split('-');
+        let dataVenda = new Date(a, m - 1, d);
+        let { start } = getStartAndEndOfWeek(dataVenda);
+        semanasSet.add(start.getTime());
+    });
+
+    let semanasArray = Array.from(semanasSet).sort((a,b) => b - a);
+    
+    semanasArray.forEach(time => {
+        let start = new Date(time);
         let end = new Date(start);
         end.setDate(start.getDate() + 4);
-
+        
         let rangeText = `${start.toLocaleDateString('pt-BR')} a ${end.toLocaleDateString('pt-BR')}`;
         let option = document.createElement('option');
-        option.value = rangeText;
-        option.innerText = i === 0 ? `${rangeText} (Atual)` : rangeText;
+        option.value = time; 
+        option.innerText = time === atualStart.getTime() ? `${rangeText} (Atual)` : rangeText;
         selector.appendChild(option);
-    }
+    });
+
+    if(!semanaSelecionada) alterarSemanaFiltro();
 }
 
 function alterarSemanaFiltro() {
     const selector = document.getElementById('semana-filtro');
-    const rangeText = selector.value.replace(' (Atual)', '');
-    const [inicioStr, fimStr] = rangeText.split(' a ');
+    const startTimestamp = parseInt(selector.value);
     
-    const [dI, mI, aI] = inicioStr.split('/');
-    const [dF, mF, aF] = fimStr.split('/');
+    let start = new Date(startTimestamp);
+    let end = new Date(start);
+    end.setDate(start.getDate() + 4);
+    end.setHours(23,59,59,999);
 
-    semanaSelecionada = {
-        start: new Date(aI, mI - 1, dI),
-        end: new Date(aF, mF - 1, dF)
-    };
+    semanaSelecionada = { start, end };
+    
+    const abaAtualId = document.querySelector('header h2').id === 'titulo-aba' ? 'vendas' : 'dashboard';
     mudarAba('vendas');
 }
 
 /* ==================================================
-   4. ESTOQUE: CRUD Dinâmico
+   5. ESTOQUE: Lendo e Salvando no Supabase
    ================================================== */
 function renderizarEstoque() {
     const grid = document.getElementById('grid-estoque');
     grid.innerHTML = '';
     
-    mockEstoque.forEach(p => {
+    estoqueGlobal.forEach(p => {
         let corEstoque = p.qtd <= 3 ? 'text-red-500' : 'text-blue-600';
         grid.innerHTML += `
             <div class="bg-white p-4 rounded-lg shadow border border-gray-200 relative group">
@@ -130,7 +155,7 @@ function renderizarEstoque() {
                     <i class="fa-solid fa-trash text-sm"></i>
                 </button>
                 <h4 class="font-bold text-gray-800 text-sm truncate pr-6" title="${p.nome}">${p.nome}</h4>
-                <p class="text-xs text-gray-500 mb-2">R$ ${p.preco.toFixed(2).replace('.',',')}</p>
+                <p class="text-xs text-gray-500 mb-2">R$ ${Number(p.preco).toFixed(2).replace('.',',')}</p>
                 <div class="flex items-end justify-between border-t pt-2">
                     <span class="text-xs text-gray-400 uppercase">Em estoque</span>
                     <span class="block text-xl font-bold ${corEstoque}">${p.qtd} <span class="text-xs font-normal text-gray-500">un</span></span>
@@ -140,27 +165,45 @@ function renderizarEstoque() {
     });
 }
 
-function salvarEstoque() {
-    const nome = document.getElementById('input-prod-nome').value;
-    const qtd = parseInt(document.getElementById('input-prod-qtd').value);
+async function salvarEstoque() {
+    const nome = document.getElementById('input-prod-nome').value.trim();
+    const novaQtd = parseInt(document.getElementById('input-prod-qtd').value);
     const preco = parseFloat(document.getElementById('input-prod-preco').value);
 
-    if(!nome || isNaN(qtd) || isNaN(preco)) return alert("Preencha todos os campos!");
+    if(!nome || isNaN(novaQtd) || isNaN(preco)) return alert("Preencha todos os campos!");
 
-    mockEstoque.push({ id: Date.now(), nome, qtd, preco });
+    toggleLoading(true);
+    
+    // Verifica se já existe produto com mesmo nome (ignorando maiuscula/minuscula)
+    const existente = estoqueGlobal.find(p => p.nome.toLowerCase() === nome.toLowerCase());
+
+    if (existente) {
+        // Soma a quantidade
+        const qtdFinal = existente.qtd + novaQtd;
+        await supabase.from('produtos').update({ qtd: qtdFinal, preco: preco }).eq('id', existente.id);
+    } else {
+        // Cria novo
+        await supabase.from('produtos').insert([{ nome, qtd: novaQtd, preco }]);
+    }
+
     fecharModal('modal-estoque');
-    renderizarEstoque();
+    document.getElementById('input-prod-nome').value = '';
+    document.getElementById('input-prod-qtd').value = '0';
+    document.getElementById('input-prod-preco').value = '';
+    
+    await carregarDadosDoBanco(); // Recarrega tudo
 }
 
-function excluirProduto(id) {
-    if(confirm("Tem certeza que deseja excluir este produto do sistema?")) {
-        mockEstoque = mockEstoque.filter(p => p.id !== id);
-        renderizarEstoque();
+async function excluirProduto(id) {
+    if(confirm("Tem certeza? Esta ação removerá o produto do estoque.")) {
+        toggleLoading(true);
+        await supabase.from('produtos').delete().eq('id', id);
+        await carregarDadosDoBanco();
     }
 }
 
 /* ==================================================
-   5. VENDAS: Visualização Limpa
+   6. VENDAS: Visualizando e Editando do Supabase
    ================================================== */
 function renderizarVendasSemanais() {
     if (!semanaSelecionada) calcularSemanaAtual();
@@ -168,26 +211,31 @@ function renderizarVendasSemanais() {
     container.innerHTML = '';
 
     document.getElementById('vendas-semana-info').innerText = `Semana: ${semanaSelecionada.start.toLocaleDateString('pt-BR')} a ${semanaSelecionada.end.toLocaleDateString('pt-BR')}`;
-    document.getElementById('vendas-gerado-info').innerText = `Gerado: ${new Date().toLocaleString('pt-BR')}`;
+    document.getElementById('vendas-gerado-info').innerText = `Atualizado: ${new Date().toLocaleString('pt-BR')}`;
 
-    const vendasSemana = mockVendas_Weekly.filter(v => {
-        const [day, month, year] = v.data.split('/');
-        const dataVenda = new Date(year, month - 1, day);
+    // Filtra pelo Range da Semana
+    const vendasSemana = vendasGlobal.filter(v => {
+        const [a, m, d] = v.data_venda.split('-');
+        const dataVenda = new Date(a, m - 1, d);
         return dataVenda >= semanaSelecionada.start && dataVenda <= semanaSelecionada.end;
     });
 
     const agrupamentoDias = { 'Segunda-feira': [], 'Terça-feira': [], 'Quarta-feira': [], 'Quinta-feira': [], 'Sexta-feira': [] };
 
     vendasSemana.forEach(v => {
-        const [day, month, year] = v.data.split('/');
-        const dayName = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][new Date(year, month - 1, day).getDay()];
+        const [a, m, d] = v.data_venda.split('-');
+        const diaNum = new Date(a, m - 1, d).getDay();
+        const dayName = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][diaNum];
         if(agrupamentoDias[dayName]) agrupamentoDias[dayName].push(v);
     });
+
+    let temVenda = false;
 
     Object.keys(agrupamentoDias).forEach(day => {
         const vendasDoDia = agrupamentoDias[day];
         if (vendasDoDia.length === 0) return;
-
+        
+        temVenda = true;
         let htmlDia = `
             <div class="grid grid-cols-[1fr,40px] items-start mb-6 border border-gray-200 rounded-lg overflow-hidden bg-white shadow">
                 <div class="p-0 overflow-x-auto">
@@ -197,26 +245,30 @@ function renderizarVendasSemanais() {
                                 <th class="p-3 w-1/4">Colaborador</th>
                                 <th class="p-3 w-1/2">Itens Consumidos</th>
                                 <th class="p-3">Total</th>
-                                <th class="p-3">Observação</th>
+                                <th class="p-3">Obs</th>
+                                <th class="p-3 text-center">Editar</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
         `;
 
         vendasDoDia.forEach(v => {
-            // Lógica para montar a string bonita de "Itens Consumidos"
-            let badgesItens = v.itens.map(itemComprado => {
-                const produtoInfo = mockEstoque.find(p => p.id === itemComprado.id_produto);
-                const nomeProduto = produtoInfo ? produtoInfo.nome : 'Produto Deletado';
-                return `<span class="inline-block bg-blue-50 border border-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1 font-medium">${itemComprado.qtd}x ${nomeProduto}</span>`;
+            let badgesItens = v.itens_venda.map(iv => {
+                const nomeProduto = iv.produtos ? iv.produtos.nome : 'Produto Deletado';
+                return `<span class="inline-block bg-blue-50 border border-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1 font-medium">${iv.qtd}x ${nomeProduto}</span>`;
             }).join('');
 
             htmlDia += `
                 <tr class="hover:bg-gray-50 transition">
                     <td class="p-3 text-sm font-semibold text-gray-800">${v.colaborador}</td>
                     <td class="p-3">${badgesItens}</td>
-                    <td class="p-3 text-sm font-bold text-gray-700">R$ ${v.total_devido.toFixed(2).replace('.',',')}</td>
-                    <td class="p-3 text-xs text-gray-500">${v.obs || '-'}</td>
+                    <td class="p-3 text-sm font-bold text-gray-700">R$ ${Number(v.total_devido).toFixed(2).replace('.',',')}</td>
+                    <td class="p-3 text-xs text-gray-500">${v.observacao || '-'}</td>
+                    <td class="p-3 text-center">
+                        <button class="bg-blue-100 p-2 rounded text-blue-700 hover:bg-blue-200 transition" onclick="abrirModalAddVenda(${v.id})">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                    </td>
                 </tr>
             `;
         });
@@ -232,115 +284,199 @@ function renderizarVendasSemanais() {
         `;
         container.innerHTML += htmlDia;
     });
+
+    if (!temVenda) {
+        container.innerHTML = `<div class="text-center py-10 text-gray-500 bg-white rounded shadow border border-dashed"><i class="fa-solid fa-folder-open text-3xl mb-2 block"></i>Nenhuma venda registrada nesta semana.</div>`;
+    }
 }
 
 /* ==================================================
-   6. LÓGICA DE REGISTRO E BAIXA DE ESTOQUE
+   7. LÓGICA DE REGISTRO E EDIÇÃO
    ================================================== */
-function abrirModalAddVenda() {
-    document.getElementById('input-consumo-colaborador').value = '';
-    document.getElementById('input-consumo-data').value = new Date().toISOString().split('T')[0];
-    document.getElementById('input-consumo-obs').value = '';
-    document.getElementById('total-consumo-modal').innerText = "R$ 0,00";
+function abrirModalAddVenda(idVendaEdit = null) {
+    vendaEmEdicaoId = idVendaEdit;
     
-    // Gera os campos dinamicamente baseado no Estoque atual
     const containerInputs = document.getElementById('container-produtos-consumo');
     containerInputs.innerHTML = '';
 
-    mockEstoque.forEach(p => {
-        containerInputs.innerHTML += `
-            <div class="flex justify-between items-center bg-white p-2 border rounded shadow-sm">
-                <div class="flex flex-col">
-                    <span class="text-xs font-bold text-gray-700 truncate w-32" title="${p.nome}">${p.nome}</span>
-                    <span class="text-[10px] text-gray-500">R$ ${p.preco.toFixed(2).replace('.',',')} | Resta: ${p.qtd}</span>
-                </div>
-                <input type="number" id="qtd-prod-${p.id}" class="w-16 border border-gray-300 rounded p-1 text-center text-sm" min="0" max="${p.qtd}" value="0" onchange="calcularTotalDinamico()">
-            </div>
-        `;
-    });
+    if (vendaEmEdicaoId) {
+        // MODO EDIÇÃO
+        document.getElementById('titulo-modal-consumo').innerText = "Editar Consumo";
+        const venda = vendasGlobal.find(v => v.id === vendaEmEdicaoId);
+        
+        document.getElementById('input-consumo-colaborador').value = venda.colaborador;
+        document.getElementById('input-consumo-data').value = venda.data_venda;
+        document.getElementById('input-consumo-obs').value = venda.observacao || '';
 
+        estoqueGlobal.forEach(p => {
+            // Busca se nessa venda específica a pessoa já havia pego esse produto
+            let itemJaComprado = venda.itens_venda.find(iv => iv.produto_id === p.id);
+            let qtdCompradaAntes = itemJaComprado ? itemJaComprado.qtd : 0;
+            let limiteDisponivel = p.qtd + qtdCompradaAntes; // Pode gastar o que já tem + o que tinha pego
+
+            containerInputs.innerHTML += `
+                <div class="flex justify-between items-center bg-white p-2 border rounded shadow-sm">
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-gray-700 truncate w-32" title="${p.nome}">${p.nome}</span>
+                        <span class="text-[10px] text-gray-500">R$ ${Number(p.preco).toFixed(2).replace('.',',')} | Disp: ${limiteDisponivel}</span>
+                    </div>
+                    <input type="number" id="qtd-prod-${p.id}" class="w-16 border border-gray-300 rounded p-1 text-center text-sm" min="0" max="${limiteDisponivel}" value="${qtdCompradaAntes}" data-preco="${p.preco}" onchange="calcularTotalDinamico()">
+                </div>
+            `;
+        });
+    } else {
+        // MODO NOVO
+        document.getElementById('titulo-modal-consumo').innerText = "Registrar Consumo";
+        document.getElementById('input-consumo-colaborador').value = '';
+        document.getElementById('input-consumo-data').value = new Date().toISOString().split('T')[0];
+        document.getElementById('input-consumo-obs').value = '';
+
+        estoqueGlobal.forEach(p => {
+            containerInputs.innerHTML += `
+                <div class="flex justify-between items-center bg-white p-2 border rounded shadow-sm">
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-gray-700 truncate w-32" title="${p.nome}">${p.nome}</span>
+                        <span class="text-[10px] text-gray-500">R$ ${Number(p.preco).toFixed(2).replace('.',',')} | Disp: ${p.qtd}</span>
+                    </div>
+                    <input type="number" id="qtd-prod-${p.id}" class="w-16 border border-gray-300 rounded p-1 text-center text-sm" min="0" max="${p.qtd}" value="0" data-preco="${p.preco}" onchange="calcularTotalDinamico()">
+                </div>
+            `;
+        });
+    }
+
+    calcularTotalDinamico();
     abrirModal('modal-consumo');
 }
 
 function calcularTotalDinamico() {
     let total = 0;
-    mockEstoque.forEach(p => {
+    estoqueGlobal.forEach(p => {
         let inputQtd = document.getElementById(`qtd-prod-${p.id}`);
         if(inputQtd && parseInt(inputQtd.value) > 0) {
-            total += parseInt(inputQtd.value) * p.preco;
+            total += parseInt(inputQtd.value) * parseFloat(inputQtd.getAttribute('data-preco'));
         }
     });
     document.getElementById('total-consumo-modal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+    return total;
 }
 
-function salvarConsumo() {
-    const colaborador = document.getElementById('input-consumo-colaborador').value;
+async function salvarConsumo() {
+    const colaborador = document.getElementById('input-consumo-colaborador').value.trim();
     const dataInput = document.getElementById('input-consumo-data').value;
     const obs = document.getElementById('input-consumo-obs').value;
+    const totalVenda = calcularTotalDinamico();
 
-    if(!colaborador || !dataInput) return alert("Preencha colaborador e data!");
+    if(!colaborador || !dataInput) return alert("Preencha o colaborador e a data!");
 
-    let itensComprados = [];
-    let totalVenda = 0;
-
-    // Varre todos os produtos no estoque para ver quais foram comprados
-    mockEstoque.forEach(p => {
+    let itensParaSalvar = [];
+    
+    // Coleta o que foi marcado no modal
+    estoqueGlobal.forEach(p => {
         let inputQtd = document.getElementById(`qtd-prod-${p.id}`);
-        let qtd = parseInt(inputQtd.value);
-        
-        if (qtd > 0) {
-            if (qtd > p.qtd) return alert(`Quantidade de ${p.nome} excede o estoque!`);
-            
-            // 1. Adiciona à lista da compra
-            itensComprados.push({ id_produto: p.id, qtd: qtd });
-            totalVenda += qtd * p.preco;
-            
-            // 2. DIMINUI O ESTOQUE (Regra de Negócio solicitada)
-            p.qtd -= qtd; 
+        let qtdDesejada = parseInt(inputQtd.value);
+        if (qtdDesejada > 0) {
+            itensParaSalvar.push({ id_produto: p.id, qtd: qtdDesejada, preco: parseFloat(inputQtd.getAttribute('data-preco')) });
         }
     });
 
-    if(itensComprados.length === 0) return alert("Selecione pelo menos um produto consumido.");
+    if(itensParaSalvar.length === 0) return alert("Selecione pelo menos um produto!");
 
-    // Formata data de YYYY-MM-DD para DD/MM/YYYY para o Mock
-    const [ano, mes, dia] = dataInput.split('-');
-    const dataFormatada = `${dia}/${mes}/${ano}`;
+    toggleLoading(true);
 
-    // Cria o registro da Venda
-    mockVendas_Weekly.push({
-        id: Date.now(),
-        data: dataFormatada,
-        colaborador: colaborador,
-        itens: itensComprados,
-        obs: obs,
-        total_devido: totalVenda
-    });
+    // SE FOR EDIÇÃO: Restaura o estoque antigo primeiro e apaga itens velhos
+    if (vendaEmEdicaoId) {
+        const vendaAntiga = vendasGlobal.find(v => v.id === vendaEmEdicaoId);
+        for(let iv of vendaAntiga.itens_venda) {
+            let p = estoqueGlobal.find(e => e.id === iv.produto_id);
+            if(p) {
+                await supabase.from('produtos').update({ qtd: p.qtd + iv.qtd }).eq('id', p.id);
+            }
+        }
+        await supabase.from('itens_venda').delete().eq('venda_id', vendaEmEdicaoId);
+    }
+
+    // Cria ou Atualiza a Venda Principal
+    let idVendaProcessada = vendaEmEdicaoId;
+    
+    if (vendaEmEdicaoId) {
+        await supabase.from('vendas').update({
+            colaborador: colaborador, data_venda: dataInput, observacao: obs, total_devido: totalVenda
+        }).eq('id', vendaEmEdicaoId);
+    } else {
+        const { data: novaVenda } = await supabase.from('vendas').insert([{
+            colaborador: colaborador, data_venda: dataInput, observacao: obs, total_devido: totalVenda
+        }]).select();
+        idVendaProcessada = novaVenda[0].id;
+    }
+
+    // Insere os Novos Itens e Debita do Estoque
+    for(let item of itensParaSalvar) {
+        await supabase.from('itens_venda').insert([{
+            venda_id: idVendaProcessada, produto_id: item.id_produto, qtd: item.qtd, preco_unitario: item.preco
+        }]);
+        
+        // Pega a versão mais atual do banco pra n ter erro matemático (se for novo, é p.qtd. Se foi edição, o supabase ja recalculou acima)
+        const { data: pAtual } = await supabase.from('produtos').select('qtd').eq('id', item.id_produto).single();
+        await supabase.from('produtos').update({ qtd: pAtual.qtd - item.qtd }).eq('id', item.id_produto);
+    }
 
     fecharModal('modal-consumo');
-    renderizarVendasSemanais(); // Atualiza a tela de Vendas
+    vendaEmEdicaoId = null;
     
-    // Como a aba estoque não está visível, ela será atualizada quando clicada, 
-    // mas os dados em memória já tiveram o estoque reduzido.
-    alert("Consumo registrado! O estoque foi reduzido e a venda salva.");
+    await carregarDadosDoBanco(); // Atualiza painel com os dados fresquinhos do banco
 }
 
-// Inicializações básicas (simplificadas para o Mock)
+/* ==================================================
+   8. DASHBOARD & FINANCEIRO
+   ================================================== */
 function renderizarFinanceiro() {
     const tbody = document.getElementById('tabela-financeiro');
-    tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">Use os dados mockados no código para testes.</td></tr>`;
+    tbody.innerHTML = '';
+    
+    // Agrupa dividas por colaborador
+    let resumo = {};
+    vendasGlobal.forEach(v => {
+        if(!resumo[v.colaborador]) resumo[v.colaborador] = 0;
+        resumo[v.colaborador] += Number(v.total_devido);
+    });
+
+    Object.keys(resumo).forEach(colab => {
+        tbody.innerHTML += `
+            <tr>
+                <td class="p-4 text-gray-800 font-medium">${colab}</td>
+                <td class="p-4 text-blue-700 font-bold">R$ ${resumo[colab].toFixed(2).replace('.',',')}</td>
+            </tr>
+        `;
+    });
 }
 
 function calcularDashboard() {
-    document.getElementById('dash-recebido').innerText = 'R$ 0,00';
-    document.getElementById('dash-pendente').innerText = 'R$ 18,00';
-    document.getElementById('dash-itens').innerText = '4';
+    // Total Geral
+    let totalGeral = vendasGlobal.reduce((acc, v) => acc + Number(v.total_devido), 0);
+    document.getElementById('dash-recebido').innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
     
-    // Calcula valor total em estoque
-    let valorEstoque = mockEstoque.reduce((acc, p) => acc + (p.qtd * p.preco), 0);
+    // Total em Estoque
+    let valorEstoque = estoqueGlobal.reduce((acc, p) => acc + (p.qtd * p.preco), 0);
     document.getElementById('dash-lucro').innerText = `R$ ${valorEstoque.toFixed(2).replace('.', ',')}`;
+
+    // Calculos da Semana Selecionada
+    let itensSemana = 0;
+    let valorSemana = 0;
+
+    vendasGlobal.forEach(v => {
+        const [a, m, d] = v.data_venda.split('-');
+        const dataVenda = new Date(a, m - 1, d);
+        if(dataVenda >= semanaSelecionada.start && dataVenda <= semanaSelecionada.end) {
+            valorSemana += Number(v.total_devido);
+            v.itens_venda.forEach(iv => itensSemana += iv.qtd);
+        }
+    });
+
+    document.getElementById('dash-itens').innerText = itensSemana;
+    document.getElementById('dash-semana').innerText = `R$ ${valorSemana.toFixed(2).replace('.', ',')}`;
 }
 
+// Inicializa lendo do banco!
 window.onload = () => {
-    popularWeekSelector();
-    calcularDashboard();
+    carregarDadosDoBanco();
 };
