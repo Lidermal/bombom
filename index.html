@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Consumo TI</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍫</text></svg>">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -13,9 +15,8 @@
             text-orientation: mixed;
             transform: rotate(180deg);
         }
-        /* Barra de rolagem suave para o modal */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; rounded: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
@@ -31,7 +32,7 @@
                 <i class="fa-solid fa-chart-line w-6"></i> Dashboard
             </button>
             <button onclick="mudarAba('vendas')" class="w-full flex items-center p-3 rounded hover:bg-gray-800 text-left transition" id="btn-vendas">
-                <i class="fa-solid fa-cart-shopping w-6"></i> Controle de Vendas
+                <i class="fa-solid fa-cart-shopping w-6"></i> Controle Semanal
             </button>
             <button onclick="mudarAba('estoque')" class="w-full flex items-center p-3 rounded hover:bg-gray-800 text-left transition" id="btn-estoque">
                 <i class="fa-solid fa-boxes-stacked w-6"></i> Estoque
@@ -44,32 +45,37 @@
 
     <main class="flex-1 flex flex-col h-full overflow-hidden">
         <header class="h-16 bg-white shadow flex items-center justify-between px-6 z-10">
-            <h2 class="text-xl font-semibold text-gray-800" id="titulo-aba">Dashboard</h2>
+            <h2 class="text-xl font-semibold text-gray-800" id="titulo-aba">Visão Geral</h2>
             <div class="flex items-center space-x-3 bg-gray-100 p-2 rounded-lg">
-                <label class="text-sm font-medium text-gray-700">Semana de Referência:</label>
-                <select id="semana-filtro" class="border rounded p-1 text-sm bg-white shadow-inner" onchange="alterarSemanaFiltro()"></select>
+                <label class="text-sm font-medium text-gray-700">Semana Referência:</label>
+                <select id="semana-filtro" class="border rounded p-1 text-sm bg-white shadow-inner focus:outline-none" onchange="alterarSemanaFiltro()"></select>
             </div>
         </header>
 
-        <div class="flex-1 overflow-auto p-6">
+        <div class="flex-1 overflow-auto p-6 relative">
             
+            <div id="loading" class="absolute inset-0 bg-white bg-opacity-75 flex flex-col items-center justify-center z-50 hidden">
+                <i class="fa-solid fa-spinner fa-spin text-4xl text-blue-600 mb-2"></i>
+                <p class="text-gray-600 font-medium">Sincronizando com Banco de Dados...</p>
+            </div>
+
             <section id="aba-dashboard" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
-                        <p class="text-gray-500 text-sm">Total Recebido</p>
+                        <p class="text-gray-500 text-sm">Total Faturado (Geral)</p>
                         <h3 class="text-2xl font-bold text-gray-800" id="dash-recebido">R$ 0,00</h3>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
-                        <p class="text-gray-500 text-sm">Pendente (A Receber)</p>
-                        <h3 class="text-2xl font-bold text-gray-800" id="dash-pendente">R$ 0,00</h3>
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
                         <p class="text-gray-500 text-sm">Valor em Estoque</p>
                         <h3 class="text-2xl font-bold text-gray-800" id="dash-lucro">R$ 0,00</h3>
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500">
-                        <p class="text-gray-500 text-sm">Itens Vendidos (Semana)</p>
+                        <p class="text-gray-500 text-sm">Itens Vendidos (Semana Selecionada)</p>
                         <h3 class="text-2xl font-bold text-gray-800" id="dash-itens">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
+                        <p class="text-gray-500 text-sm">Total da Semana</p>
+                        <h3 class="text-2xl font-bold text-gray-800" id="dash-semana">R$ 0,00</h3>
                     </div>
                 </div>
             </section>
@@ -108,9 +114,7 @@
                         <thead class="bg-gray-50 border-b">
                             <tr>
                                 <th class="p-4 font-semibold text-gray-600">Colaborador</th>
-                                <th class="p-4 font-semibold text-gray-600">Total Devido</th>
-                                <th class="p-4 font-semibold text-gray-600">Status</th>
-                                <th class="p-4 font-semibold text-gray-600">Ação</th>
+                                <th class="p-4 font-semibold text-gray-600">Total Acumulado</th>
                             </tr>
                         </thead>
                         <tbody id="tabela-financeiro" class="divide-y divide-gray-200">
@@ -123,26 +127,27 @@
 
     <div id="modal-estoque" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg w-96 p-6">
-            <h3 class="text-lg font-bold mb-4">Adicionar ao Estoque</h3>
+            <h3 class="text-lg font-bold mb-4">Adicionar / Atualizar Estoque</h3>
+            <p class="text-xs text-gray-500 mb-4">Se o nome do produto já existir, a quantidade será somada.</p>
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm text-gray-600 mb-1">Nome do Produto</label>
-                    <input type="text" id="input-prod-nome" class="w-full border rounded p-2" placeholder="Ex: Cone Trufado">
+                    <input type="text" id="input-prod-nome" class="w-full border rounded p-2 focus:outline-blue-500" placeholder="Ex: Cone Trufado">
                 </div>
                 <div class="flex space-x-4">
                     <div class="w-1/2">
-                        <label class="block text-sm text-gray-600 mb-1">Qtd Atual</label>
-                        <input type="number" id="input-prod-qtd" class="w-full border rounded p-2" value="0">
+                        <label class="block text-sm text-gray-600 mb-1">Nova Qtd</label>
+                        <input type="number" id="input-prod-qtd" class="w-full border rounded p-2 focus:outline-blue-500" value="0">
                     </div>
                     <div class="w-1/2">
                         <label class="block text-sm text-gray-600 mb-1">Preço (R$)</label>
-                        <input type="number" step="0.10" id="input-prod-preco" class="w-full border rounded p-2" placeholder="2.50">
+                        <input type="number" step="0.10" id="input-prod-preco" class="w-full border rounded p-2 focus:outline-blue-500" placeholder="2.50">
                     </div>
                 </div>
             </div>
             <div class="mt-6 flex justify-end space-x-3">
                 <button onclick="fecharModal('modal-estoque')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
-                <button onclick="salvarEstoque()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Salvar DB</button>
+                <button onclick="salvarEstoque()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Salvar Banco</button>
             </div>
         </div>
     </div>
@@ -154,11 +159,11 @@
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
                     <label class="block text-sm text-gray-600 mb-1">Nome do Colaborador</label>
-                    <input type="text" id="input-consumo-colaborador" class="w-full border rounded p-2" placeholder="Ex: Douglas">
+                    <input type="text" id="input-consumo-colaborador" class="w-full border rounded p-2 focus:outline-blue-500" placeholder="Ex: Douglas">
                 </div>
                 <div>
                     <label class="block text-sm text-gray-600 mb-1">Data</label>
-                    <input type="date" id="input-consumo-data" class="w-full border rounded p-2">
+                    <input type="date" id="input-consumo-data" class="w-full border rounded p-2 focus:outline-blue-500">
                 </div>
             </div>
 
@@ -168,7 +173,7 @@
 
             <div class="mt-4 border-t pt-3 flex-shrink-0">
                 <label class="block text-sm text-gray-600 mb-1">Observações (Opcional)</label>
-                <input type="text" id="input-consumo-obs" class="w-full border rounded p-2" placeholder="Ex: Pago via PIX">
+                <input type="text" id="input-consumo-obs" class="w-full border rounded p-2 focus:outline-blue-500" placeholder="Ex: Pago via PIX">
             </div>
 
             <div class="mt-4 border-t pt-3 flex justify-between items-center bg-blue-50 p-3 rounded flex-shrink-0">
@@ -178,7 +183,7 @@
 
             <div class="mt-4 flex justify-end space-x-3 flex-shrink-0">
                 <button onclick="fecharModal('modal-consumo')" class="px-4 py-2 text-gray-600 border rounded hover:bg-gray-100">Cancelar</button>
-                <button onclick="salvarConsumo()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">Confirmar e Baixar Estoque</button>
+                <button onclick="salvarConsumo()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">Salvar no Banco</button>
             </div>
         </div>
     </div>
