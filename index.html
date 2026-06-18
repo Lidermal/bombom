@@ -18,7 +18,6 @@
             background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;
             z-index: 9999;
         }
-        /* Custom scrollbar for sidebar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #111; }
         ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
@@ -34,9 +33,8 @@
     </div>
 </div>
 
-<!-- Sidebar (Barra Lateral Preta) -->
+<!-- Sidebar -->
 <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-black text-white transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40 flex flex-col shadow-2xl">
-    <!-- Logo -->
     <div class="p-6 border-b border-gray-800 flex items-center space-x-3">
         <span class="text-3xl">🍫</span>
         <div>
@@ -45,7 +43,6 @@
         </div>
     </div>
     
-    <!-- Menu de Navegação -->
     <nav class="flex-1 mt-4 overflow-y-auto">
         <a onclick="showSection('dashboard', this)" class="nav-link flex items-center px-6 py-4 text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer transition-all border-r-4 border-transparent">
             <span class="mr-4 text-xl">📊</span> 
@@ -65,29 +62,24 @@
         </a>
     </nav>
 
-    <!-- Rodapé da Sidebar -->
     <div class="p-6 border-t border-gray-800 text-center">
-        <p class="text-xs text-gray-500">v2.0 - Black Edition</p>
+        <p class="text-xs text-gray-500">v3.0 - Black Edition</p>
     </div>
 </aside>
 
-<!-- Overlay para fechar a sidebar no mobile -->
 <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-60 z-30 hidden md:hidden backdrop-blur-sm" onclick="toggleSidebar()"></div>
 
-<!-- Área Principal -->
 <div class="flex-1 md:ml-64 flex flex-col min-h-screen">
     
-    <!-- Header Mobile (Aparece apenas em telas pequenas) -->
     <header class="bg-black text-white p-4 md:hidden flex justify-between items-center shadow-lg sticky top-0 z-20">
         <button onclick="toggleSidebar()" class="text-2xl p-2 hover:bg-gray-800 rounded-lg transition">☰</button>
         <span class="text-lg font-bold flex items-center"><span class="mr-2">🍫</span> Controle de Trufas</span>
-        <div class="w-10"></div> <!-- Spacer para centralizar o título -->
+        <div class="w-10"></div>
     </header>
 
-    <!-- Conteúdo da Página -->
     <main class="flex-1 p-4 md:p-8">
 
-        <!-- Dashboard Section -->
+        <!-- Dashboard -->
         <section id="dashboard" class="section fade-in hidden">
             <h2 class="text-3xl font-bold text-gray-800 mb-6">Dashboard</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -112,19 +104,19 @@
                 <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-purple-500 hover:shadow-md transition">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-500 font-medium">Itens Vendidos (Semana)</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1" id="dashItensSemana">0</p>
+                            <p class="text-sm text-gray-500 font-medium">Total Pago (Semana)</p>
+                            <p class="text-2xl font-bold text-gray-900 mt-1" id="dashTotalPago">R$ 0,00</p>
                         </div>
-                        <div class="bg-purple-100 p-3 rounded-full text-purple-600 text-2xl">🛒</div>
+                        <div class="bg-purple-100 p-3 rounded-full text-purple-600 text-2xl">✅</div>
                     </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-500 hover:shadow-md transition">
+                <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500 hover:shadow-md transition">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-500 font-medium">Total Financeiro (Semana)</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1" id="dashTotalSemana">R$ 0,00</p>
+                            <p class="text-sm text-gray-500 font-medium">À Receber (Semana)</p>
+                            <p class="text-2xl font-bold text-gray-900 mt-1" id="dashTotalPendente">R$ 0,00</p>
                         </div>
-                        <div class="bg-orange-100 p-3 rounded-full text-orange-600 text-2xl">💵</div>
+                        <div class="bg-red-100 p-3 rounded-full text-red-600 text-2xl">⏳</div>
                     </div>
                 </div>
             </div>
@@ -141,6 +133,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Colaborador</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Obs</th>
                             </tr>
                         </thead>
                         <tbody id="recentSalesBody" class="bg-white divide-y divide-gray-200"></tbody>
@@ -149,12 +142,12 @@
             </div>
         </section>
 
-        <!-- Weekly Control Section -->
+        <!-- Controle Semanal -->
         <section id="semanal" class="section fade-in hidden">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <h2 class="text-3xl font-bold text-gray-800">Controle Semanal</h2>
                 <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                    <select id="weekFilter" onchange="loadWeeklyData()" class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm">
+                    <select id="weekFilter" onchange="loadWeeklyData()" class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-black focus:border-black bg-white shadow-sm">
                         <option value="">Carregando semanas...</option>
                     </select>
                     <button onclick="openSaleModal()" class="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center justify-center shadow-sm">
@@ -165,7 +158,7 @@
             <div id="weeklyContainer" class="space-y-6"></div>
         </section>
 
-        <!-- Inventory Section -->
+        <!-- Estoque -->
         <section id="estoque" class="section fade-in hidden">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <h2 class="text-3xl font-bold text-gray-800">Controle de Estoque</h2>
@@ -189,16 +182,49 @@
             </div>
         </section>
 
-        <!-- Financial Section -->
+        <!-- Financeiro -->
         <section id="financeiro" class="section fade-in hidden">
             <h2 class="text-3xl font-bold text-gray-800 mb-6">Resumo Financeiro por Colaborador</h2>
-            <div id="financialContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
+                    <p class="text-sm text-gray-500 font-medium">Total Recebido</p>
+                    <p class="text-2xl font-bold text-green-600 mt-1" id="finTotalRecebido">R$ 0,00</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
+                    <p class="text-sm text-gray-500 font-medium">Total Pendente</p>
+                    <p class="text-2xl font-bold text-red-600 mt-1" id="finTotalPendente">R$ 0,00</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
+                    <p class="text-sm text-gray-500 font-medium">Total Geral</p>
+                    <p class="text-2xl font-bold text-blue-600 mt-1" id="finTotalGeral">R$ 0,00</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                    <h3 class="text-lg font-semibold text-gray-800">Detalhamento por Colaborador</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Colaborador</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Pago</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Pendente</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Geral</th>
+                            </tr>
+                        </thead>
+                        <tbody id="financialBody" class="bg-white divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
         </section>
 
     </main>
 </div>
 
-<!-- Sale Modal -->
+<!-- Modal de Venda -->
 <div id="saleModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 sticky top-0">
@@ -208,19 +234,28 @@
         <div class="p-6">
             <form id="saleForm" onsubmit="saveSale(event)">
                 <input type="hidden" id="saleId">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Data da Venda</label>
                         <input type="date" id="saleDate" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-black">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Colaborador</label>
-                        <input type="text" id="saleColaborador" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-black">
+                        <input type="text" id="saleColaborador" required list="colaboradoresList" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-black">
+                        <datalist id="colaboradoresList"></datalist>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select id="saleStatus" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-black">
+                            <option value="PAGO - PIX">PAGO - PIX</option>
+                            <option value="PAGO - ESPÉCIE">PAGO - ESPÉCIE</option>
+                            <option value="À PAGAR">À PAGAR</option>
+                        </select>
                     </div>
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Observação</label>
-                    <textarea id="saleObs" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-black"></textarea>
+                    <textarea id="saleObs" rows="2" placeholder="Ex: Falta R$ 1,00 / Crédito R$ 10,00" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-black"></textarea>
                 </div>
                 <div class="mb-4">
                     <h4 class="font-semibold text-gray-800 mb-2">Itens da Venda</h4>
@@ -243,7 +278,7 @@
     </div>
 </div>
 
-<!-- Product Modal -->
+<!-- Modal de Produto -->
 <div id="productModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-white rounded-xl max-w-md w-full shadow-2xl">
         <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
@@ -255,7 +290,9 @@
                 <input type="hidden" id="productId">
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Produto</label>
-                    <input type="text" id="productName" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-black">
+                    <input type="text" id="productName" required list="produtosList" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-black">
+                    <datalist id="produtosList"></datalist>
+                    <p class="text-xs text-gray-500 mt-1">💡 Se o produto já existir, a quantidade será somada ao estoque atual</p>
                 </div>
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
@@ -277,871 +314,613 @@
 </div>
 
 <script>
-import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { 
-  PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid
-} from 'recharts';
-
-// Configuração do Supabase
+// ============================================
+// CONFIGURAÇÃO DO SUPABASE
+// ============================================
 const SUPABASE_URL = 'https://jyjrzczpuyomatskebfk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5anJ6Y3pwdXlvbWF0c2tlYmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDExMDcsImV4cCI6MjA5NzM3NzEwN30.texrp9Ayt6rzmQyCYDS1UgJiKm6yUm4-PFq4lIj47hE';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Componente de Alerta Personalizado
-const CustomAlert = ({ message, type, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
+// Variáveis globais
+let products = [];
+let sales = [];
 
-  const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
-
-  return (
-    <div className={`fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in`}>
-      {message}
-    </div>
-  );
-};
-
-// Função para obter semana atual
-const getWeekRange = (date) => {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(d.setDate(diff));
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  
-  return {
-    start: monday.toISOString().split('T')[0],
-    end: sunday.toISOString().split('T')[0],
-    label: `${monday.getDate().toString().padStart(2, '0')}/${(monday.getMonth()+1).toString().padStart(2, '0')} à ${sunday.getDate().toString().padStart(2, '0')}/${(sunday.getMonth()+1).toString().padStart(2, '0')}`
-  };
-};
-
-const App = () => {
-  // Estados
-  const [activeTab, setActiveTab] = useState('vendas');
-  const [sales, setSales] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [stock, setStock] = useState([]);
-  const [alert, setAlert] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState('');
-  const [currentWeek, setCurrentWeek] = useState(getWeekRange(new Date()));
-  
-  // Form states
-  const [saleForm, setSaleForm] = useState({
-    client: '',
-    date: new Date().toISOString().split('T')[0],
-    products: [],
-    total: 0,
-    status: 'PAGO',
-    observation: ''
-  });
-
-  const [productForm, setProductForm] = useState({
-    name: '',
-    price: 2.50,
-    stock: 0
-  });
-
-  const [stockForm, setStockForm] = useState({
-    product_id: '',
-    quantity: 0,
-    type: 'entry' // entry ou exit
-  });
-
-  // Carregar dados
-  useEffect(() => {
+// ============================================
+// INICIALIZAÇÃO
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    const defaultLink = document.querySelector('.nav-link');
+    if (defaultLink) showSection('dashboard', defaultLink);
     loadData();
-  }, []);
+});
 
-  const loadData = async () => {
-    await loadSales();
-    await loadProducts();
-    await loadStock();
-  };
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
+}
 
-  const loadSales = async () => {
-    const { data, error } = await supabase
-      .from('sales')
-      .select(`
-        *,
-        sale_items (
-          product_id,
-          quantity,
-          price,
-          products (name)
-        )
-      `)
-      .order('date', { ascending: false });
+function showSection(sectionId, element) {
+    document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+    document.getElementById(sectionId).classList.remove('hidden');
     
-    if (error) {
-      setAlert({ message: 'Erro ao carregar vendas', type: 'error' });
-    } else {
-      setSales(data || []);
-    }
-  };
-
-  const loadProducts = async () => {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('name');
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('bg-gray-800', 'text-white', 'border-r-4', 'border-white');
+        link.classList.add('text-gray-300', 'border-transparent');
+    });
     
-    if (error) {
-      setAlert({ message: 'Erro ao carregar produtos', type: 'error' });
-    } else {
-      setProducts(data || []);
+    if (element) {
+        element.classList.remove('text-gray-300', 'border-transparent');
+        element.classList.add('bg-gray-800', 'text-white', 'border-r-4', 'border-white');
     }
-  };
 
-  const loadStock = async () => {
-    const { data, error } = await supabase
-      .from('stock')
-      .select(`
-        *,
-        products (name)
-      `);
+    if (window.innerWidth < 768) {
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar.classList.contains('-translate-x-full')) {
+            toggleSidebar();
+        }
+    }
+}
+
+function showLoading(show) {
+    document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
+}
+
+// ============================================
+// CARREGAMENTO DE DADOS
+// ============================================
+async function loadData() {
+    showLoading(true);
+    try {
+        const [productsRes, salesRes] = await Promise.all([
+            supabase.from('produtos').select('*').order('nome'),
+            supabase.from('vendas').select('*, itens_venda(*, produto:produtos(nome))').order('data_venda', { ascending: false })
+        ]);
+
+        if (productsRes.error) throw productsRes.error;
+        if (salesRes.error) throw salesRes.error;
+
+        products = productsRes.data || [];
+        sales = salesRes.data || [];
+
+        updateDashboard();
+        loadWeeklyData();
+        loadInventory();
+        loadFinancial();
+        populateWeekFilter();
+        updateDatalists();
+    } catch (error) {
+        Swal.fire('Erro', 'Erro ao carregar dados: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function updateDatalists() {
+    // Atualiza lista de colaboradores
+    const colaboradores = [...new Set(sales.map(s => s.colaborador))].sort();
+    const colabList = document.getElementById('colaboradoresList');
+    if (colabList) {
+        colabList.innerHTML = colaboradores.map(c => `<option value="${c}">`).join('');
+    }
     
-    if (error) {
-      setAlert({ message: 'Erro ao carregar estoque', type: 'error' });
-    } else {
-      setStock(data || []);
+    // Atualiza lista de produtos
+    const prodList = document.getElementById('produtosList');
+    if (prodList) {
+        prodList.innerHTML = products.map(p => `<option value="${p.nome}">`).join('');
     }
-  };
+}
 
-  // Criar tabelas se não existirem
-  const createTables = async () => {
-    // Tabela de produtos
-    await supabase.rpc('create_products_table');
+// ============================================
+// DASHBOARD
+// ============================================
+function updateDashboard() {
+    const totalFaturado = sales.reduce((sum, s) => sum + (parseFloat(s.total_devido) || 0), 0);
+    const valorEstoque = products.reduce((sum, p) => sum + (p.qtd * p.preco), 0);
     
-    // Tabela de vendas
-    await supabase.rpc('create_sales_table');
+    const currentWeekStart = getWeekStart(new Date());
+    const currentWeekEnd = new Date(currentWeekStart);
+    currentWeekEnd.setDate(currentWeekEnd.getDate() + 6);
     
-    // Tabela de itens de venda
-    await supabase.rpc('create_sale_items_table');
+    const weekSales = sales.filter(s => {
+        const saleDate = new Date(s.data_venda);
+        return saleDate >= currentWeekStart && saleDate <= currentWeekEnd;
+    });
     
-    // Tabela de estoque
-    await supabase.rpc('create_stock_table');
-  };
-
-  // Salvar venda
-  const saveSale = async () => {
-    if (!saleForm.client || saleForm.products.length === 0) {
-      setAlert({ message: 'Preencha o cliente e adicione produtos', type: 'error' });
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('sales')
-      .insert({
-        client: saleForm.client,
-        date: saleForm.date,
-        total: saleForm.total,
-        status: saleForm.status,
-        observation: saleForm.observation,
-        week_label: currentWeek.label
-      })
-      .select()
-      .single();
-
-    if (error) {
-      setAlert({ message: 'Erro ao salvar venda', type: 'error' });
-      return;
-    }
-
-    // Salvar itens
-    for (const item of saleForm.products) {
-      await supabase.from('sale_items').insert({
-        sale_id: data.id,
-        product_id: item.id,
-        quantity: item.quantity,
-        price: item.price
-      });
-
-      // Atualizar estoque
-      if (item.stock_id) {
-        await supabase.rpc('update_stock', {
-          p_stock_id: item.stock_id,
-          p_quantity: -item.quantity
-        });
-      }
-    }
-
-    setAlert({ message: 'Venda salva com sucesso!', type: 'success' });
-    setShowModal(false);
-    resetSaleForm();
-    loadData();
-  };
-
-  const resetSaleForm = () => {
-    setSaleForm({
-      client: '',
-      date: new Date().toISOString().split('T')[0],
-      products: [],
-      total: 0,
-      status: 'PAGO',
-      observation: ''
-    });
-  };
-
-  // Adicionar produto à venda
-  const addProductToSale = (product) => {
-    const existing = saleForm.products.find(p => p.id === product.id);
-    if (existing) {
-      setAlert({ message: 'Produto já adicionado', type: 'error' });
-      return;
-    }
-
-    setSaleForm({
-      ...saleForm,
-      products: [...saleForm.products, { ...product, quantity: 1 }]
-    });
-  };
-
-  const updateProductQuantity = (productId, quantity) => {
-    setSaleForm({
-      ...saleForm,
-      products: saleForm.products.map(p => 
-        p.id === productId ? { ...p, quantity: parseInt(quantity) || 1 } : p
-      )
-    });
-  };
-
-  const removeProductFromSale = (productId) => {
-    setSaleForm({
-      ...saleForm,
-      products: saleForm.products.filter(p => p.id !== productId)
-    });
-  };
-
-  // Calcular total
-  useEffect(() => {
-    const total = saleForm.products.reduce((acc, p) => acc + (p.price * p.quantity), 0);
-    setSaleForm({ ...saleForm, total });
-  }, [saleForm.products]);
-
-  // Salvar produto
-  const saveProduct = async () => {
-    if (!productForm.name) {
-      setAlert({ message: 'Nome do produto é obrigatório', type: 'error' });
-      return;
-    }
-
-    const { error } = await supabase
-      .from('products')
-      .insert(productForm);
-
-    if (error) {
-      setAlert({ message: 'Erro ao salvar produto', type: 'error' });
-    } else {
-      setAlert({ message: 'Produto salvo com sucesso!', type: 'success' });
-      setShowModal(false);
-      setProductForm({ name: '', price: 2.50, stock: 0 });
-      loadProducts();
-    }
-  };
-
-  // Atualizar estoque
-  const updateStock = async () => {
-    if (!stockForm.product_id || stockForm.quantity <= 0) {
-      setAlert({ message: 'Selecione o produto e quantidade', type: 'error' });
-      return;
-    }
-
-    const { error } = await supabase.rpc('update_stock', {
-      p_stock_id: stockForm.product_id,
-      p_quantity: stockForm.type === 'entry' ? stockForm.quantity : -stockForm.quantity
-    });
-
-    if (error) {
-      setAlert({ message: 'Erro ao atualizar estoque', type: 'error' });
-    } else {
-      setAlert({ message: 'Estoque atualizado!', type: 'success' });
-      setShowModal(false);
-      setStockForm({ product_id: '', quantity: 0, type: 'entry' });
-      loadStock();
-    }
-  };
-
-  // Filtrar vendas da semana
-  const getWeekSales = () => {
-    return sales.filter(sale => {
-      const saleDate = new Date(sale.date);
-      const weekStart = new Date(currentWeek.start);
-      const weekEnd = new Date(currentWeek.end);
-      return saleDate >= weekStart && saleDate <= weekEnd;
-    });
-  };
-
-  // Dashboard data
-  const getDashboardData = () => {
-    const weekSales = getWeekSales();
-    const totalSales = weekSales.reduce((acc, s) => acc + s.total, 0);
-    const paid = weekSales.filter(s => s.status === 'PAGO').reduce((acc, s) => acc + s.total, 0);
-    const pending = weekSales.filter(s => s.status === 'À PAGAR').reduce((acc, s) => acc + s.total, 0);
-    const toReceive = weekSales.filter(s => s.status === 'A RECEBER').reduce((acc, s) => acc + s.total, 0);
+    const totalPago = weekSales
+        .filter(s => s.status && s.status.startsWith('PAGO'))
+        .reduce((sum, s) => sum + (parseFloat(s.total_devido) || 0), 0);
     
-    // Agrupar por dia da semana
-    const byDay = {};
-    weekSales.forEach(sale => {
-      const day = new Date(sale.date).toLocaleDateString('pt-BR', { weekday: 'short' });
-      byDay[day] = (byDay[day] || 0) + sale.total;
+    const totalPendente = weekSales
+        .filter(s => s.status === 'À PAGAR')
+        .reduce((sum, s) => sum + (parseFloat(s.total_devido) || 0), 0);
+
+    document.getElementById('dashTotalFaturado').textContent = formatCurrency(totalFaturado);
+    document.getElementById('dashValorEstoque').textContent = formatCurrency(valorEstoque);
+    document.getElementById('dashTotalPago').textContent = formatCurrency(totalPago);
+    document.getElementById('dashTotalPendente').textContent = formatCurrency(totalPendente);
+
+    const recentBody = document.getElementById('recentSalesBody');
+    recentBody.innerHTML = sales.slice(0, 10).map(sale => `
+        <tr class="hover:bg-gray-50 transition">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatDate(sale.data_venda)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${sale.colaborador}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">${formatCurrency(sale.total_devido)}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                ${getStatusBadge(sale.status)}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500 italic">${sale.observacao || '-'}</td>
+        </tr>
+    `).join('');
+}
+
+function getStatusBadge(status) {
+    if (!status) return '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Sem status</span>';
+    if (status === 'PAGO - PIX') return '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">✅ PIX</span>';
+    if (status === 'PAGO - ESPÉCIE') return '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">💵 ESPÉCIE</span>';
+    if (status === 'À PAGAR') return '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">⏳ À PAGAR</span>';
+    return `<span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">${status}</span>`;
+}
+
+// ============================================
+// CONTROLE SEMANAL
+// ============================================
+function getWeekStart(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function populateWeekFilter() {
+    const weeks = new Set();
+    sales.forEach(s => {
+        const date = new Date(s.data_venda);
+        const weekStart = getWeekStart(date);
+        weeks.add(weekStart.toISOString().split('T')[0]);
     });
+    
+    const currentWeekStart = getWeekStart(new Date());
+    weeks.add(currentWeekStart.toISOString().split('T')[0]);
+    
+    const sortedWeeks = Array.from(weeks).sort((a, b) => new Date(b) - new Date(a));
+    
+    const select = document.getElementById('weekFilter');
+    select.innerHTML = sortedWeeks.map(week => {
+        const start = new Date(week + 'T00:00:00');
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6);
+        const label = `${start.toLocaleDateString('pt-BR')} a ${end.toLocaleDateString('pt-BR')}`;
+        return `<option value="${week}" ${week === currentWeekStart.toISOString().split('T')[0] ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+    
+    loadWeeklyData();
+}
 
-    return {
-      totalSales,
-      paid,
-      pending,
-      toReceive,
-      profit: paid - (totalSales * 0.4), // Margem de 60%
-      byDay: Object.entries(byDay).map(([name, value]) => ({ name, value }))
-    };
-  };
-
-  const dashboardData = getDashboardData();
-
-  // Cores para gráficos
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
-
-  return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      {alert && (
-        <CustomAlert 
-          message={alert.message} 
-          type={alert.type} 
-          onClose={() => setAlert(null)} 
-        />
-      )}
-
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-4">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Controle de Trufas</h1>
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setActiveTab('vendas')}
-              className={`px-4 py-2 rounded ${activeTab === 'vendas' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Vendas
-            </button>
-            <button 
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-2 rounded ${activeTab === 'dashboard' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Dashboard
-            </button>
-            <button 
-              onClick={() => setActiveTab('estoque')}
-              className={`px-4 py-2 rounded ${activeTab === 'estoque' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Estoque
-            </button>
-            <button 
-              onClick={() => setActiveTab('financeiro')}
-              className={`px-4 py-2 rounded ${activeTab === 'financeiro' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Financeiro
-            </button>
-          </div>
-          
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-gray-600">Semana:</span>
-            <input 
-              type="date" 
-              value={currentWeek.start}
-              onChange={(e) => setCurrentWeek(getWeekRange(e.target.value))}
-              className="border rounded px-2 py-1"
-            />
-            <span className="text-gray-600">{currentWeek.label}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        {activeTab === 'vendas' && (
-          <div>
-            <div className="flex justify-between mb-4">
-              <h2 className="text-xl font-bold">Vendas da Semana</h2>
-              <button 
-                onClick={() => { setModalType('sale'); setShowModal(true); }}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-              >
-                Nova Venda
-              </button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border p-2">Dia</th>
-                    <th className="border p-2">Cliente</th>
-                    <th className="border p-2">Produtos</th>
-                    <th className="border p-2">Total</th>
-                    <th className="border p-2">Status</th>
-                    <th className="border p-2">Obs</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {getWeekSales().map((sale, idx) => (
-                    <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="border p-2">
-                        {new Date(sale.date).toLocaleDateString('pt-BR', { weekday: 'short' })}
-                      </td>
-                      <td className="border p-2">{sale.client}</td>
-                      <td className="border p-2">
-                        {sale.sale_items?.map((item, i) => (
-                          <div key={i}>{item.products?.name} x{item.quantity}</div>
-                        ))}
-                      </td>
-                      <td className="border p-2">R$ {sale.total.toFixed(2)}</td>
-                      <td className="border p-2">
-                        <span className={`px-2 py-1 rounded text-white ${
-                          sale.status === 'PAGO' ? 'bg-green-500' : 
-                          sale.status === 'À PAGAR' ? 'bg-red-500' : 'bg-yellow-500'
-                        }`}>
-                          {sale.status}
-                        </span>
-                      </td>
-                      <td className="border p-2">{sale.observation}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'dashboard' && (
-          <div>
-            <h2 className="text-xl font-bold mb-4">Dashboard - Semana {currentWeek.label}</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-blue-100 p-4 rounded-lg">
-                <h3 className="text-sm text-gray-600">Total em Vendas</h3>
-                <p className="text-2xl font-bold">R$ {dashboardData.totalSales.toFixed(2)}</p>
-              </div>
-              <div className="bg-green-100 p-4 rounded-lg">
-                <h3 className="text-sm text-gray-600">Pago</h3>
-                <p className="text-2xl font-bold text-green-600">R$ {dashboardData.paid.toFixed(2)}</p>
-              </div>
-              <div className="bg-red-100 p-4 rounded-lg">
-                <h3 className="text-sm text-gray-600">Pendentes</h3>
-                <p className="text-2xl font-bold text-red-600">R$ {dashboardData.pending.toFixed(2)}</p>
-              </div>
-              <div className="bg-purple-100 p-4 rounded-lg">
-                <h3 className="text-sm text-gray-600">Lucro Estimado</h3>
-                <p className="text-2xl font-bold text-purple-600">R$ {dashboardData.profit.toFixed(2)}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-bold mb-2">Vendas por Dia</h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={dashboardData.byDay}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-bold mb-2">Distribuição de Pagamentos</h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'Pago', value: dashboardData.paid },
-                        { name: 'Pendente', value: dashboardData.pending },
-                        { name: 'A Receber', value: dashboardData.toReceive }
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, value }) => `${name}: R$ ${value.toFixed(2)}`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {[0, 1, 2].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'estoque' && (
-          <div>
-            <div className="flex justify-between mb-4">
-              <h2 className="text-xl font-bold">Controle de Estoque</h2>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => { setModalType('product'); setShowModal(true); }}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Novo Produto
-                </button>
-                <button 
-                  onClick={() => { setModalType('stock'); setShowModal(true); }}
-                  className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
-                >
-                  Movimentar Estoque
-                </button>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border p-2">Produto</th>
-                    <th className="border p-2">Preço</th>
-                    <th className="border p-2">Estoque Atual</th>
-                    <th className="border p-2">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stock.map((item, idx) => (
-                    <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="border p-2">{item.products?.name}</td>
-                      <td className="border p-2">R$ {item.products?.price?.toFixed(2)}</td>
-                      <td className="border p-2 font-bold">{item.quantity}</td>
-                      <td className="border p-2">
-                        {item.quantity <= 5 ? (
-                          <span className="text-red-500 font-bold">Baixo</span>
-                        ) : item.quantity <= 10 ? (
-                          <span className="text-yellow-500">Médio</span>
-                        ) : (
-                          <span className="text-green-500">Bom</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'financeiro' && (
-          <div>
-            <h2 className="text-xl font-bold mb-4">Controle Financeiro</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-green-100 p-4 rounded-lg">
-                <h3 className="text-sm">Total Recebido</h3>
-                <p className="text-2xl font-bold text-green-600">R$ {dashboardData.paid.toFixed(2)}</p>
-              </div>
-              <div className="bg-red-100 p-4 rounded-lg">
-                <h3 className="text-sm">Total Pendente</h3>
-                <p className="text-2xl font-bold text-red-600">R$ {dashboardData.pending.toFixed(2)}</p>
-              </div>
-              <div className="bg-yellow-100 p-4 rounded-lg">
-                <h3 className="text-sm">A Receber</h3>
-                <p className="text-2xl font-bold text-yellow-600">R$ {dashboardData.toReceive.toFixed(2)}</p>
-              </div>
-            </div>
-
-            <h3 className="font-bold mb-2">Clientes com Pendências</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border p-2">Cliente</th>
-                    <th className="border p-2">Total</th>
-                    <th className="border p-2">Status</th>
-                    <th className="border p-2">Data</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {getWeekSales()
-                    .filter(s => s.status !== 'PAGO')
-                    .map((sale, idx) => (
-                      <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="border p-2">{sale.client}</td>
-                        <td className="border p-2">R$ {sale.total.toFixed(2)}</td>
-                        <td className="border p-2">
-                          <span className={`px-2 py-1 rounded text-white ${
-                            sale.status === 'À PAGAR' ? 'bg-red-500' : 'bg-yellow-500'
-                          }`}>
-                            {sale.status}
-                          </span>
-                        </td>
-                        <td className="border p-2">{new Date(sale.date).toLocaleDateString('pt-BR')}</td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">
-              {modalType === 'sale' && 'Nova Venda'}
-              {modalType === 'product' && 'Novo Produto'}
-              {modalType === 'stock' && 'Movimentar Estoque'}
-            </h2>
-
-            {modalType === 'sale' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block font-bold mb-1">Cliente</label>
-                  <input
-                    type="text"
-                    value={saleForm.client}
-                    onChange={(e) => setSaleForm({...saleForm, client: e.target.value})}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="Nome do cliente"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-1">Data</label>
-                  <input
-                    type="date"
-                    value={saleForm.date}
-                    onChange={(e) => setSaleForm({...saleForm, date: e.target.value})}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-2">Produtos</label>
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    {products.map(product => (
-                      <button
-                        key={product.id}
-                        onClick={() => addProductToSale(product)}
-                        disabled={saleForm.products.find(p => p.id === product.id)}
-                        className={`p-2 rounded border ${
-                          saleForm.products.find(p => p.id === product.id)
-                            ? 'bg-gray-200 cursor-not-allowed'
-                            : 'bg-blue-50 hover:bg-blue-100'
-                        }`}
-                      >
-                        {product.name} - R$ {product.price.toFixed(2)}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  {saleForm.products.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      {saleForm.products.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2 bg-gray-50 p-2 rounded">
-                          <span className="flex-1">{item.name}</span>
-                          <input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) => updateProductQuantity(item.id, e.target.value)}
-                            className="w-20 border rounded px-2 py-1"
-                          />
-                          <span>R$ {(item.price * item.quantity).toFixed(2)}</span>
-                          <button
-                            onClick={() => removeProductFromSale(item.id)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            ✕
-                          </button>
+function loadWeeklyData() {
+    const weekStartStr = document.getElementById('weekFilter').value;
+    if (!weekStartStr) return;
+    
+    const weekStart = new Date(weekStartStr + 'T00:00:00');
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    
+    const weekSales = sales.filter(s => {
+        const saleDate = new Date(s.data_venda + 'T00:00:00');
+        return saleDate >= weekStart && saleDate <= weekEnd;
+    });
+    
+    const days = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira'];
+    const container = document.getElementById('weeklyContainer');
+    container.innerHTML = '';
+    
+    for (let i = 0; i < 5; i++) {
+        const dayDate = new Date(weekStart);
+        dayDate.setDate(dayDate.getDate() + i);
+        const dayStr = dayDate.toISOString().split('T')[0];
+        const daySales = weekSales.filter(s => s.data_venda === dayStr);
+        
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'bg-white rounded-xl shadow-sm overflow-hidden';
+        
+        let itemsHtml = '';
+        if (daySales.length === 0) {
+            itemsHtml = '<p class="text-gray-400 italic px-6 py-8 text-center">Nenhuma venda registrada neste dia.</p>';
+        } else {
+            daySales.forEach(sale => {
+                const items = sale.itens_venda || [];
+                const itemsList = items.map(item => {
+                    const produto = item.produto || products.find(p => p.id === item.produto_id);
+                    return `<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-800 mr-2 mb-2 border border-gray-200">
+                        ${produto?.nome || 'Produto'} <span class="text-gray-500 ml-1">(x${item.qtd})</span>
+                    </span>`;
+                }).join('');
+                
+                itemsHtml += `
+                    <div class="border-b border-gray-100 px-6 py-4 hover:bg-gray-50 transition">
+                        <div class="flex justify-between items-start mb-3 flex-wrap gap-2">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-gray-900 text-lg">${sale.colaborador}</p>
+                                <div class="mt-1">${getStatusBadge(sale.status)}</div>
+                                ${sale.observacao ? `<p class="text-sm text-gray-500 italic mt-1">💬 "${sale.observacao}"</p>` : ''}
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-green-600 text-lg">${formatCurrency(sale.total_devido)}</p>
+                                <button onclick="editSale('${sale.id}')" class="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1 block">✏️ Editar</button>
+                            </div>
                         </div>
-                      ))}
+                        <div class="flex flex-wrap mt-2">${itemsList}</div>
                     </div>
-                  )}
-                </div>
+                `;
+            });
+        }
+        
+        dayDiv.innerHTML = `
+            <div class="px-6 py-4 border-b border-gray-100 bg-black text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg">${days[i]} <span class="text-gray-400 font-normal text-sm ml-2">${dayDate.toLocaleDateString('pt-BR')}</span></h3>
+                <button onclick="quickAddSale('${dayStr}')" class="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-gray-200 transition">+ Adicionar</button>
+            </div>
+            <div>${itemsHtml}</div>
+        `;
+        
+        container.appendChild(dayDiv);
+    }
+}
 
-                <div>
-                  <label className="block font-bold mb-1">Status</label>
-                  <select
-                    value={saleForm.status}
-                    onChange={(e) => setSaleForm({...saleForm, status: e.target.value})}
-                    className="w-full border rounded px-3 py-2"
-                  >
-                    <option value="PAGO">PAGO</option>
-                    <option value="À PAGAR">À PAGAR</option>
-                    <option value="A RECEBER">A RECEBER</option>
-                  </select>
-                </div>
+// ============================================
+// ESTOQUE
+// ============================================
+function loadInventory() {
+    const tbody = document.getElementById('inventoryBody');
+    if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-400 italic">Nenhum produto cadastrado</td></tr>';
+        return;
+    }
+    tbody.innerHTML = products.map(p => `
+        <tr class="hover:bg-gray-50 transition">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${p.nome}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <span class="px-2 py-1 rounded font-bold ${p.qtd === 0 ? 'bg-red-100 text-red-800' : p.qtd < 5 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}">${p.qtd}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(p.preco)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${formatCurrency(p.qtd * p.preco)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <button onclick="editProduct('${p.id}')" class="text-blue-600 hover:text-blue-900 mr-3 font-medium">Editar</button>
+                <button onclick="deleteProduct('${p.id}')" class="text-red-600 hover:text-red-900 font-medium">Excluir</button>
+            </td>
+        </tr>
+    `).join('');
+}
 
-                <div>
-                  <label className="block font-bold mb-1">Observação</label>
-                  <textarea
-                    value={saleForm.observation}
-                    onChange={(e) => setSaleForm({...saleForm, observation: e.target.value})}
-                    className="w-full border rounded px-3 py-2"
-                    rows="2"
-                  />
-                </div>
+// ============================================
+// FINANCEIRO
+// ============================================
+function loadFinancial() {
+    const colaboradores = {};
+    sales.forEach(sale => {
+        const colab = sale.colaborador;
+        if (!colaboradores[colab]) {
+            colaboradores[colab] = { pago: 0, pendente: 0, total: 0 };
+        }
+        const valor = parseFloat(sale.total_devido) || 0;
+        colaboradores[colab].total += valor;
+        if (sale.status && sale.status.startsWith('PAGO')) {
+            colaboradores[colab].pago += valor;
+        } else {
+            colaboradores[colab].pendente += valor;
+        }
+    });
+    
+    const totalRecebido = Object.values(colaboradores).reduce((sum, c) => sum + c.pago, 0);
+    const totalPendente = Object.values(colaboradores).reduce((sum, c) => sum + c.pendente, 0);
+    const totalGeral = totalRecebido + totalPendente;
+    
+    document.getElementById('finTotalRecebido').textContent = formatCurrency(totalRecebido);
+    document.getElementById('finTotalPendente').textContent = formatCurrency(totalPendente);
+    document.getElementById('finTotalGeral').textContent = formatCurrency(totalGeral);
+    
+    const tbody = document.getElementById('financialBody');
+    const sortedColabs = Object.entries(colaboradores).sort((a, b) => b[1].total - a[1].total);
+    
+    if (sortedColabs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-400 italic">Nenhuma venda registrada</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = sortedColabs.map(([nome, dados]) => `
+        <tr class="hover:bg-gray-50 transition">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${nome}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">${formatCurrency(dados.pago)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold ${dados.pendente > 0 ? 'text-red-600' : 'text-gray-400'}">${formatCurrency(dados.pendente)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">${formatCurrency(dados.total)}</td>
+        </tr>
+    `).join('');
+}
 
-                <div className="bg-gray-100 p-3 rounded">
-                  <span className="font-bold">Total: R$ {saleForm.total.toFixed(2)}</span>
-                </div>
+// ============================================
+// MODAL DE VENDA
+// ============================================
+function openSaleModal(sale = null) {
+    const modal = document.getElementById('saleModal');
+    const form = document.getElementById('saleForm');
+    const title = document.getElementById('saleModalTitle');
+    const itemsContainer = document.getElementById('saleItems');
+    
+    form.reset();
+    itemsContainer.innerHTML = '';
+    
+    if (sale) {
+        title.textContent = 'Editar Venda';
+        document.getElementById('saleId').value = sale.id;
+        document.getElementById('saleDate').value = sale.data_venda;
+        document.getElementById('saleColaborador').value = sale.colaborador;
+        document.getElementById('saleStatus').value = sale.status || 'PAGO - PIX';
+        document.getElementById('saleObs').value = sale.observacao || '';
+        (sale.itens_venda || []).forEach(item => addSaleItem(item.produto_id, item.qtd));
+    } else {
+        title.textContent = 'Nova Venda';
+        document.getElementById('saleId').value = '';
+        document.getElementById('saleDate').valueAsDate = new Date();
+        document.getElementById('saleStatus').value = 'PAGO - PIX';
+        addSaleItem();
+    }
+    modal.classList.remove('hidden');
+    updateSaleTotal();
+}
 
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="px-4 py-2 border rounded hover:bg-gray-100"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={saveSale}
-                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                  >
-                    Salvar
-                  </button>
-                </div>
-              </div>
-            )}
+function closeSaleModal() {
+    document.getElementById('saleModal').classList.add('hidden');
+}
 
-            {modalType === 'product' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block font-bold mb-1">Nome do Produto</label>
-                  <input
-                    type="text"
-                    value={productForm.name}
-                    onChange={(e) => setProductForm({...productForm, name: e.target.value})}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="Ex: Chocolate, Ninho, etc."
-                  />
-                </div>
+function addSaleItem(productId = '', qty = 1) {
+    const container = document.getElementById('saleItems');
+    const div = document.createElement('div');
+    div.className = 'flex gap-2 items-center bg-gray-50 p-2 rounded-lg border border-gray-200';
+    
+    const productOptions = products.map(p => 
+        `<option value="${p.id}" ${p.id === productId ? 'selected' : ''} data-price="${p.preco}">${p.nome} (${formatCurrency(p.preco)})</option>`
+    ).join('');
+    
+    div.innerHTML = `
+        <select class="product-select flex-1 border border-gray-300 rounded-lg px-3 py-2 bg-white" onchange="updateSaleTotal()">
+            <option value="">Selecione...</option>
+            ${productOptions}
+        </select>
+        <input type="number" class="qty-input w-20 border border-gray-300 rounded-lg px-3 py-2 bg-white" value="${qty}" min="1" onchange="updateSaleTotal()">
+        <button type="button" onclick="this.parentElement.remove(); updateSaleTotal()" class="text-red-500 hover:text-red-700 text-2xl leading-none px-2">&times;</button>
+    `;
+    container.appendChild(div);
+    updateSaleTotal();
+}
 
-                <div>
-                  <label className="block font-bold mb-1">Preço (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={productForm.price}
-                    onChange={(e) => setProductForm({...productForm, price: parseFloat(e.target.value)})}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
+function updateSaleTotal() {
+    let total = 0;
+    document.querySelectorAll('#saleItems > div').forEach(item => {
+        const select = item.querySelector('.product-select');
+        if (!select) return;
+        const qty = parseInt(item.querySelector('.qty-input').value) || 0;
+        const price = parseFloat(select.options[select.selectedIndex]?.dataset.price) || 0;
+        total += qty * price;
+    });
+    document.getElementById('saleTotal').textContent = formatCurrency(total);
+}
 
-                <div>
-                  <label className="block font-bold mb-1">Estoque Inicial</label>
-                  <input
-                    type="number"
-                    value={productForm.stock}
-                    onChange={(e) => setProductForm({...productForm, stock: parseInt(e.target.value)})}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
+async function saveSale(event) {
+    event.preventDefault();
+    
+    const saleId = document.getElementById('saleId').value;
+    const date = document.getElementById('saleDate').value;
+    const colaborador = document.getElementById('saleColaborador').value.trim();
+    const status = document.getElementById('saleStatus').value;
+    const observacao = document.getElementById('saleObs').value.trim();
+    
+    const items = [];
+    let total = 0;
+    
+    document.querySelectorAll('#saleItems > div').forEach(item => {
+        const select = item.querySelector('.product-select');
+        const productId = select.value;
+        const qty = parseInt(item.querySelector('.qty-input').value) || 0;
+        if (productId && qty > 0) {
+            const product = products.find(p => p.id === productId);
+            items.push({ produto_id: productId, qtd: qty, preco_unitario: product.preco });
+            total += qty * product.preco;
+        }
+    });
+    
+    if (items.length === 0) {
+        Swal.fire('Atenção', 'Adicione pelo menos um item', 'warning');
+        return;
+    }
+    
+    try {
+        showLoading(true);
+        
+        // Se for edição, restaura estoque antigo
+        if (saleId) {
+            const oldSale = sales.find(s => s.id === saleId);
+            if (oldSale?.itens_venda) {
+                for (const item of oldSale.itens_venda) {
+                    await supabase.rpc('increment_product_qty', { prod_id: item.produto_id, qty_to_add: item.qtd });
+                }
+            }
+        }
+        
+        // Baixa no novo estoque
+        for (const item of items) {
+            await supabase.rpc('decrement_product_qty', { prod_id: item.produto_id, qty_to_remove: item.qtd });
+        }
+        
+        const saleData = {
+            colaborador,
+            data_venda: date,
+            observacao,
+            total_devido: total,
+            status
+        };
+        
+        let finalSaleId = saleId;
+        
+        if (saleId) {
+            await supabase.from('vendas').update(saleData).eq('id', saleId);
+            await supabase.from('itens_venda').delete().eq('venda_id', saleId);
+        } else {
+            const { data: newSale, error } = await supabase.from('vendas').insert([saleData]).select();
+            if (error) throw error;
+            finalSaleId = newSale[0].id;
+        }
+        
+        const itensToInsert = items.map(i => ({
+            venda_id: finalSaleId,
+            produto_id: i.produto_id,
+            qtd: i.qtd,
+            preco_unitario: i.preco_unitario
+        }));
+        await supabase.from('itens_venda').insert(itensToInsert);
+        
+        await loadData();
+        closeSaleModal();
+        Swal.fire({
+            icon: 'success',
+            title: 'Venda salva!',
+            text: 'Estoque atualizado automaticamente',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    } catch (error) {
+        Swal.fire('Erro', 'Erro ao salvar: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
 
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="px-4 py-2 border rounded hover:bg-gray-100"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={saveProduct}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Salvar
-                  </button>
-                </div>
-              </div>
-            )}
+function editSale(saleId) {
+    const sale = sales.find(s => s.id === saleId);
+    if (sale) openSaleModal(sale);
+}
 
-            {modalType === 'stock' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block font-bold mb-1">Produto</label>
-                  <select
-                    value={stockForm.product_id}
-                    onChange={(e) => setStockForm({...stockForm, product_id: e.target.value})}
-                    className="w-full border rounded px-3 py-2"
-                  >
-                    <option value="">Selecione...</option>
-                    {products.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
+function quickAddSale(date) {
+    openSaleModal();
+    document.getElementById('saleDate').value = date;
+}
 
-                <div>
-                  <label className="block font-bold mb-1">Tipo de Movimentação</label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        value="entry"
-                        checked={stockForm.type === 'entry'}
-                        onChange={(e) => setStockForm({...stockForm, type: e.target.value})}
-                        className="mr-2"
-                      />
-                      Entrada (Adicionar)
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        value="exit"
-                        checked={stockForm.type === 'exit'}
-                        onChange={(e) => setStockForm({...stockForm, type: e.target.value})}
-                        className="mr-2"
-                      />
-                      Saída (Remover)
-                    </label>
-                  </div>
-                </div>
+// ============================================
+// MODAL DE PRODUTO
+// ============================================
+function openProductModal(product = null) {
+    const modal = document.getElementById('productModal');
+    const form = document.getElementById('productForm');
+    const title = document.getElementById('productModalTitle');
+    form.reset();
+    
+    if (product) {
+        title.textContent = 'Editar Produto';
+        document.getElementById('productId').value = product.id;
+        document.getElementById('productName').value = product.nome;
+        document.getElementById('productQty').value = product.qtd;
+        document.getElementById('productPrice').value = product.preco;
+    } else {
+        title.textContent = 'Novo Produto';
+        document.getElementById('productId').value = '';
+    }
+    modal.classList.remove('hidden');
+}
 
-                <div>
-                  <label className="block font-bold mb-1">Quantidade</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={stockForm.quantity}
-                    onChange={(e) => setStockForm({...stockForm, quantity: parseInt(e.target.value)})}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
+function closeProductModal() {
+    document.getElementById('productModal').classList.add('hidden');
+}
 
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="px-4 py-2 border rounded hover:bg-gray-100"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={updateStock}
-                    className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
-                  >
-                    Atualizar
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+async function saveProduct(event) {
+    event.preventDefault();
+    
+    const productId = document.getElementById('productId').value;
+    const nome = document.getElementById('productName').value.trim();
+    const qtd = parseInt(document.getElementById('productQty').value) || 0;
+    const preco = parseFloat(document.getElementById('productPrice').value) || 0;
+    
+    try {
+        showLoading(true);
+        
+        // Verifica se produto já existe (para somar estoque)
+        const existingProduct = products.find(p => 
+            p.nome.toLowerCase() === nome.toLowerCase() && p.id !== productId
+        );
+        
+        if (existingProduct) {
+            // Soma quantidade ao existente
+            const newQty = existingProduct.qtd + qtd;
+            await supabase.from('produtos').update({ qtd: newQty, preco }).eq('id', existingProduct.id);
+            Swal.fire({
+                icon: 'success',
+                title: 'Produto existente!',
+                html: `Estoque atualizado: <b>${existingProduct.qtd} + ${qtd} = ${newQty}</b>`,
+                timer: 2500,
+                showConfirmButton: false
+            });
+        } else if (productId) {
+            await supabase.from('produtos').update({ nome, qtd, preco }).eq('id', productId);
+            Swal.fire('Sucesso', 'Produto atualizado!', 'success');
+        } else {
+            await supabase.from('produtos').insert([{ nome, qtd, preco }]);
+            Swal.fire('Sucesso', 'Produto criado!', 'success');
+        }
+        
+        await loadData();
+        closeProductModal();
+    } catch (error) {
+        Swal.fire('Erro', error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
 
-export default App;
+function editProduct(productId) {
+    const product = products.find(p => p.id === productId);
+    if (product) openProductModal(product);
+}
+
+async function deleteProduct(productId) {
+    const result = await Swal.fire({
+        title: 'Excluir produto?',
+        text: 'Esta ação não pode ser desfeita!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#000',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sim, excluir!',
+        cancelButtonText: 'Cancelar'
+    });
+    
+    if (result.isConfirmed) {
+        try {
+            showLoading(true);
+            await supabase.from('produtos').delete().eq('id', productId);
+            await loadData();
+            Swal.fire('Excluído!', 'Produto removido.', 'success');
+        } catch (error) {
+            Swal.fire('Erro', error.message, 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+}
+
+// ============================================
+// UTILITÁRIOS
+// ============================================
+function formatCurrency(value) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
 </script>
 </body>
 </html>
