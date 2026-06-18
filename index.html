@@ -4,12 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Consumo TI</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Estilo personalizado para texto vertical (como na imagem) -->
+    <style>
+        .vertical-text {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+        }
+    </style>
 </head>
 <body class="bg-gray-100 font-sans flex h-screen overflow-hidden">
 
+    <!-- Sidebar Menu (Inalterado) -->
     <aside class="w-64 bg-gray-900 text-white flex flex-col">
         <div class="h-16 flex items-center justify-center border-b border-gray-800">
             <h1 class="text-xl font-bold"><i class="fa-solid fa-candy-cane text-red-500 mr-2"></i>TI Consumo</h1>
@@ -30,20 +42,23 @@
         </nav>
     </aside>
 
+    <!-- Área Principal -->
     <main class="flex-1 flex flex-col h-full overflow-hidden">
+        <!-- Topbar com Filtro de Semana (Movido para o topo de todas as telas) -->
         <header class="h-16 bg-white shadow flex items-center justify-between px-6 z-10">
             <h2 class="text-xl font-semibold text-gray-800" id="titulo-aba">Dashboard</h2>
-            <div class="flex items-center space-x-3">
-                <label class="text-sm text-gray-500">Semana de Referência:</label>
-                <select id="semana-filtro" class="border rounded p-1 text-sm bg-gray-50">
-                    <option value="atual">01/06 a 05/06</option>
-                    <option value="anterior">25/05 a 29/05</option>
+            <div class="flex items-center space-x-3 bg-gray-100 p-2 rounded-lg">
+                <label class="text-sm font-medium text-gray-700">Semana de Referência:</label>
+                <select id="semana-filtro" class="border rounded p-1 text-sm bg-white shadow-inner" onchange="alterarSemanaFiltro()">
+                    <!-- Injetado via JS -->
                 </select>
             </div>
         </header>
 
+        <!-- Conteúdo Dinâmico -->
         <div class="flex-1 overflow-auto p-6">
             
+            <!-- ABA: DASHBOARD (Inalterado) -->
             <section id="aba-dashboard" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
@@ -65,30 +80,28 @@
                 </div>
             </section>
 
-            <section id="aba-vendas" class="hidden space-y-4">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-medium">Registro de Consumo</h3>
-                    <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onclick="abrirModal('modal-venda')">
-                        <i class="fa-solid fa-plus mr-1"></i> Registrar Consumo
-                    </button>
+            <!-- ABA: VENDAS (Reformulada com o visual da imagem) -->
+            <section id="aba-vendas" class="hidden space-y-6">
+                <div class="bg-gray-100 p-4 rounded-lg shadow-inner mb-6 border-b border-gray-200">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="font-semibold text-gray-700" id="vendas-semana-info">Semana: ... a ...</span>
+                        <span class="text-gray-500" id="vendas-gerado-info">Gerado: ...</span>
+                        <span class="font-semibold text-gray-700">Responsável: Jonatas</span>
+                    </div>
                 </div>
-                <div class="bg-white rounded-lg shadow overflow-hidden">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-gray-50 border-b">
-                            <tr>
-                                <th class="p-4 font-semibold text-gray-600">Data</th>
-                                <th class="p-4 font-semibold text-gray-600">Colaborador</th>
-                                <th class="p-4 font-semibold text-gray-600">Produto</th>
-                                <th class="p-4 font-semibold text-gray-600">Qtd</th>
-                                <th class="p-4 font-semibold text-gray-600">Total (R$)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-vendas" class="divide-y divide-gray-200">
-                            </tbody>
-                    </table>
+
+                <!-- O container de vendas agrupadas (JS vai injetar aqui) -->
+                <div id="container-vendas-semanais" class="space-y-8">
+                    <!-- Injetado via JS -->
                 </div>
+
+                <!-- Botão Flutuante (Inalterado) -->
+                <button class="fixed bottom-6 right-6 bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg hover:bg-blue-700 transition z-20" onclick="abrirModalAddVenda()">
+                    <i class="fa-solid fa-plus mr-1"></i> Registrar Consumo
+                </button>
             </section>
 
+            <!-- ABA: ESTOQUE (Inalterado) -->
             <section id="aba-estoque" class="hidden space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-medium">Controle de Estoque</h3>
@@ -97,9 +110,11 @@
                     </button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="grid-estoque">
-                    </div>
+                    <!-- Injetado via JS -->
+                </div>
             </section>
 
+            <!-- ABA: FINANCEIRO (Inalterado) -->
             <section id="aba-financeiro" class="hidden space-y-4">
                 <h3 class="text-lg font-medium">Acertos e Pagamentos</h3>
                 <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -113,13 +128,16 @@
                             </tr>
                         </thead>
                         <tbody id="tabela-financeiro" class="divide-y divide-gray-200">
-                            </tbody>
+                            <!-- Injetado via JS -->
+                        </tbody>
                     </table>
                 </div>
             </section>
         </div>
     </main>
 
+    <!-- MODAIS -->
+    <!-- Modal Estoque (Inalterado) -->
     <div id="modal-estoque" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg w-96 p-6">
             <h3 class="text-lg font-bold mb-4">Atualizar Estoque</h3>
@@ -146,6 +164,64 @@
         </div>
     </div>
 
+    <!-- Novo Modal de Vendas (Consumo) -->
+    <div id="modal-consumo" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg w-full max-w-xl p-6">
+            <h3 class="text-lg font-bold mb-4" id="titulo-modal-consumo">Registrar Consumo</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Colaborador</label>
+                    <select id="input-consumo-colaborador" class="w-full border rounded p-2">
+                        <option value="Janaelson">Janaelson</option>
+                        <option value="Douglas">Douglas</option>
+                        <option value="Jessica">Jessica</option>
+                        <option value="Ismael">Ismael</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Data</label>
+                    <input type="date" id="input-consumo-data" class="w-full border rounded p-2">
+                </div>
+            </div>
+            <div class="mt-4 space-y-3">
+                <label class="block text-sm text-gray-600 mb-1">Itens Consumidos (Quantidades)</label>
+                <div class="flex space-x-3 items-end border-t pt-3">
+                    <label class="w-24 text-xs font-semibold text-gray-600">Chocolate:</label>
+                    <input type="number" id="input-qtd-chocolate" class="w-full max-w-[80px] border rounded p-2" value="0">
+                </div>
+                <div class="flex space-x-3 items-end">
+                    <label class="w-24 text-xs font-semibold text-gray-600">Ninho:</label>
+                    <input type="number" id="input-qtd-ninho" class="w-full max-w-[80px] border rounded p-2" value="0">
+                </div>
+                <div class="flex space-x-3 items-end">
+                    <label class="w-24 text-xs font-semibold text-gray-600">Coco:</label>
+                    <input type="number" id="input-qtd-coco" class="w-full max-w-[80px] border rounded p-2" value="0">
+                </div>
+                <div class="flex space-x-3 items-end">
+                    <label class="w-24 text-xs font-semibold text-gray-600">Cone:</label>
+                    <input type="number" id="input-qtd-cone" class="w-full max-w-[80px] border rounded p-2" value="0">
+                </div>
+                <div class="flex space-x-3 items-end">
+                    <label class="w-24 text-xs font-semibold text-gray-600">Brownie:</label>
+                    <input type="number" id="input-qtd-brownie" class="w-full max-w-[80px] border rounded p-2" value="0">
+                </div>
+                <div class="border-t pt-3">
+                    <label class="block text-sm text-gray-600 mb-1">Observações</label>
+                    <textarea id="input-consumo-obs" class="w-full border rounded p-2" placeholder="Ex: Pagou via PIX hoje"></textarea>
+                </div>
+                <div class="border-t pt-3 flex justify-between items-center bg-gray-50 p-2 rounded">
+                    <label class="block text-sm font-semibold text-gray-800">Total (R$)</label>
+                    <h4 class="text-xl font-bold text-blue-600" id="total-consumo-modal">R$ 0,00</h4>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="fecharModal('modal-consumo')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                <button onclick="salvarConsumo()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Salvar DB</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="app.js"></script>
 </body>
 </html>
