@@ -1,7 +1,7 @@
 /* ==================================================
    1. CONFIGURAÇÃO SUPABASE
    ================================================== */
-const SUPABASE_URL = 'https://jyjrzczpuyomatskebfk.supabase.co'; // Sem o rest/v1
+const SUPABASE_URL = 'https://jyjrzczpuyomatskebfk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5anJ6Y3pwdXlvbWF0c2tlYmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDExMDcsImV4cCI6MjA5NzM3NzEwN30.texrp9Ayt6rzmQyCYDS1UgJiKm6yUm4-PFq4lIj47hE';
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -13,64 +13,99 @@ let estoqueGlobal = [];
 let vendasGlobal = [];
 let vendaEmEdicaoId = null;
 
-// Função para exibir tela de carregamento
 function toggleLoading(show) {
     document.getElementById('loading').classList.toggle('hidden', !show);
+}
+
+// ALERTA DE SUCESSO (Canto superior direito, some sozinho)
+function avisoSucesso(mensagem) {
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: mensagem,
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true
+    });
+}
+
+// ALERTA DE ERRO (Central, exige clique)
+function avisoErro(titulo, mensagem) {
+    Swal.fire({
+        icon: 'error',
+        title: titulo,
+        text: mensagem,
+        confirmButtonColor: '#3b82f6'
+    });
 }
 
 /* ==================================================
    3. INICIALIZAÇÃO DE DADOS (SUPABASE FETCH)
    ================================================== */
 async function carregarDadosDoBanco() {
-    toggleLoading(true);
-    
-    // Buscar Estoque
-    const { data: produtos, error: errProd } = await supabase.from('produtos').select('*').order('nome');
-    if (produtos) estoqueGlobal = produtos;
-
-    // Buscar Vendas (Com os itens e nomes de produtos via chave estrangeira)
-    const { data: vendas, error: errVenda } = await supabase
-        .from('vendas')
-        .select(`
-            id, colaborador, data_venda, observacao, total_devido, criado_em,
-            itens_venda ( id, qtd, preco_unitario, produto_id, produtos ( nome ) )
-        `)
-        .order('data_venda', { ascending: false });
+    try {
+        toggleLoading(true);
         
-    if (vendas) vendasGlobal = vendas;
+        // Busca Estoque
+        const { data: produtos, error: errProd } = await supabase.from('produtos').select('*').order('nome');
+        if (errProd) throw errProd;
+        estoqueGlobal = produtos || [];
 
-    // Inicializa interface
-    popularWeekSelector();
-    mudarAba('vendas'); // Aba padrão
-    
-    toggleLoading(false);
+        // Busca Vendas
+        const { data: vendas, error: errVenda } = await supabase
+            .from('vendas')
+            .select(`
+                id, colaborador, data_venda, observacao, total_devido, criado_em,
+                itens_venda ( id, qtd, preco_unitario, produto_id, produtos ( nome ) )
+            `)
+            .order('data_venda', { ascending: false });
+            
+        if (errVenda) throw errVenda;
+        vendasGlobal = vendas || [];
+
+        popularWeekSelector();
+        // Recarrega a aba atual para preencher com os dados do banco
+        const abaAberta = document.querySelector('section:not(.hidden)').id.replace('aba-', '');
+        mudarAba(abaAberta);
+
+    } catch (error) {
+        avisoErro('Falha na Conexão', 'Não foi possível carregar os dados do banco. Atualize a página.');
+        console.error(error);
+    } finally {
+        toggleLoading(false);
+    }
 }
 
 /* ==================================================
    4. NAVEGAÇÃO E LÓGICA DE SEMANA
    ================================================== */
 function mudarAba(abaId) {
-    document.getElementById('aba-dashboard').classList.add('hidden');
-    document.getElementById('aba-vendas').classList.add('hidden');
-    document.getElementById('aba-estoque').classList.add('hidden');
-    document.getElementById('aba-financeiro').classList.add('hidden');
-    
-    document.getElementById(`aba-${abaId}`).classList.remove('hidden');
+    try {
+        document.getElementById('aba-dashboard').classList.add('hidden');
+        document.getElementById('aba-vendas').classList.add('hidden');
+        document.getElementById('aba-estoque').classList.add('hidden');
+        document.getElementById('aba-financeiro').classList.add('hidden');
+        
+        document.getElementById(`aba-${abaId}`).classList.remove('hidden');
 
-    const titulos = {
-        'dashboard': 'Visão Geral',
-        'vendas': 'Controle de Consumo Semanal',
-        'estoque': 'Gerenciamento de Estoque',
-        'financeiro': 'Acertos Financeiros'
-    };
-    document.getElementById('titulo-aba').innerText = titulos[abaId];
+        const titulos = {
+            'dashboard': 'Visão Geral',
+            'vendas': 'Controle Semanal',
+            'estoque': 'Gerenciamento de Estoque',
+            'financeiro': 'Acertos Financeiros'
+        };
+        document.getElementById('titulo-aba').innerText = titulos[abaId];
 
-    if(!semanaSelecionada) calcularSemanaAtual();
+        if(!semanaSelecionada) calcularSemanaAtual();
 
-    if(abaId === 'estoque') renderizarEstoque();
-    if(abaId === 'vendas') renderizarVendasSemanais();
-    if(abaId === 'financeiro') renderizarFinanceiro();
-    if(abaId === 'dashboard') calcularDashboard();
+        if(abaId === 'estoque') renderizarEstoque();
+        if(abaId === 'vendas') renderizarVendasSemanais();
+        if(abaId === 'financeiro') renderizarFinanceiro();
+        if(abaId === 'dashboard') calcularDashboard();
+    } catch (e) {
+        console.error('Erro ao mudar aba:', e);
+    }
 }
 
 function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
@@ -83,7 +118,7 @@ function getStartAndEndOfWeek(date) {
     start.setDate(diff);
     
     let end = new Date(start);
-    end.setDate(start.getDate() + 4); // Sexta-feira
+    end.setDate(start.getDate() + 4);
     end.setHours(23,59,59,999);
     return { start, end };
 }
@@ -98,10 +133,10 @@ function popularWeekSelector() {
     
     let semanasSet = new Set();
     let { start: atualStart } = getStartAndEndOfWeek(new Date());
-    semanasSet.add(atualStart.getTime()); // Sempre adiciona a semana atual
+    semanasSet.add(atualStart.getTime());
 
-    // Vasculha as vendas para adicionar outras semanas que possuem registro
     vendasGlobal.forEach(v => {
+        if(!v.data_venda) return;
         let [a, m, d] = v.data_venda.split('-');
         let dataVenda = new Date(a, m - 1, d);
         let { start } = getStartAndEndOfWeek(dataVenda);
@@ -127,16 +162,15 @@ function popularWeekSelector() {
 
 function alterarSemanaFiltro() {
     const selector = document.getElementById('semana-filtro');
-    const startTimestamp = parseInt(selector.value);
+    if(!selector.value) return;
     
+    const startTimestamp = parseInt(selector.value);
     let start = new Date(startTimestamp);
     let end = new Date(start);
     end.setDate(start.getDate() + 4);
     end.setHours(23,59,59,999);
 
     semanaSelecionada = { start, end };
-    
-    const abaAtualId = document.querySelector('header h2').id === 'titulo-aba' ? 'vendas' : 'dashboard';
     mudarAba('vendas');
 }
 
@@ -170,40 +204,63 @@ async function salvarEstoque() {
     const novaQtd = parseInt(document.getElementById('input-prod-qtd').value);
     const preco = parseFloat(document.getElementById('input-prod-preco').value);
 
-    if(!nome || isNaN(novaQtd) || isNaN(preco)) return alert("Preencha todos os campos!");
-
-    toggleLoading(true);
-    
-    // Verifica se já existe produto com mesmo nome (ignorando maiuscula/minuscula)
-    const existente = estoqueGlobal.find(p => p.nome.toLowerCase() === nome.toLowerCase());
-
-    if (existente) {
-        // Soma a quantidade
-        const qtdFinal = existente.qtd + novaQtd;
-        await supabase.from('produtos').update({ qtd: qtdFinal, preco: preco }).eq('id', existente.id);
-    } else {
-        // Cria novo
-        await supabase.from('produtos').insert([{ nome, qtd: novaQtd, preco }]);
+    if(!nome || isNaN(novaQtd) || isNaN(preco)) {
+        return avisoErro('Atenção', 'Preencha todos os campos do produto corretamente.');
     }
 
-    fecharModal('modal-estoque');
-    document.getElementById('input-prod-nome').value = '';
-    document.getElementById('input-prod-qtd').value = '0';
-    document.getElementById('input-prod-preco').value = '';
-    
-    await carregarDadosDoBanco(); // Recarrega tudo
+    try {
+        toggleLoading(true);
+        const existente = estoqueGlobal.find(p => p.nome.toLowerCase() === nome.toLowerCase());
+
+        if (existente) {
+            const qtdFinal = existente.qtd + novaQtd;
+            await supabase.from('produtos').update({ qtd: qtdFinal, preco: preco }).eq('id', existente.id);
+        } else {
+            await supabase.from('produtos').insert([{ nome, qtd: novaQtd, preco }]);
+        }
+
+        fecharModal('modal-estoque');
+        document.getElementById('input-prod-nome').value = '';
+        document.getElementById('input-prod-qtd').value = '0';
+        document.getElementById('input-prod-preco').value = '';
+        
+        await carregarDadosDoBanco();
+        avisoSucesso('Estoque atualizado!');
+
+    } catch (e) {
+        avisoErro('Erro', 'Não foi possível salvar no banco.');
+    } finally {
+        toggleLoading(false);
+    }
 }
 
 async function excluirProduto(id) {
-    if(confirm("Tem certeza? Esta ação removerá o produto do estoque.")) {
-        toggleLoading(true);
-        await supabase.from('produtos').delete().eq('id', id);
-        await carregarDadosDoBanco();
-    }
+    Swal.fire({
+        title: 'Excluir Produto?',
+        text: "Essa ação não pode ser desfeita e removerá o produto do estoque.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sim, excluir!',
+        cancelButtonText: 'Cancelar'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                toggleLoading(true);
+                await supabase.from('produtos').delete().eq('id', id);
+                await carregarDadosDoBanco();
+                avisoSucesso('Produto excluído.');
+            } catch (e) {
+                avisoErro('Erro', 'O produto está vinculado a uma venda e não pode ser apagado.');
+                toggleLoading(false);
+            }
+        }
+    });
 }
 
 /* ==================================================
-   6. VENDAS: Visualizando e Editando do Supabase
+   6. VENDAS: Visualizando e Editando
    ================================================== */
 function renderizarVendasSemanais() {
     if (!semanaSelecionada) calcularSemanaAtual();
@@ -213,8 +270,8 @@ function renderizarVendasSemanais() {
     document.getElementById('vendas-semana-info').innerText = `Semana: ${semanaSelecionada.start.toLocaleDateString('pt-BR')} a ${semanaSelecionada.end.toLocaleDateString('pt-BR')}`;
     document.getElementById('vendas-gerado-info').innerText = `Atualizado: ${new Date().toLocaleString('pt-BR')}`;
 
-    // Filtra pelo Range da Semana
     const vendasSemana = vendasGlobal.filter(v => {
+        if(!v.data_venda) return false;
         const [a, m, d] = v.data_venda.split('-');
         const dataVenda = new Date(a, m - 1, d);
         return dataVenda >= semanaSelecionada.start && dataVenda <= semanaSelecionada.end;
@@ -254,7 +311,7 @@ function renderizarVendasSemanais() {
 
         vendasDoDia.forEach(v => {
             let badgesItens = v.itens_venda.map(iv => {
-                const nomeProduto = iv.produtos ? iv.produtos.nome : 'Produto Deletado';
+                const nomeProduto = iv.produtos ? iv.produtos.nome : 'Excluído';
                 return `<span class="inline-block bg-blue-50 border border-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1 font-medium">${iv.qtd}x ${nomeProduto}</span>`;
             }).join('');
 
@@ -295,12 +352,10 @@ function renderizarVendasSemanais() {
    ================================================== */
 function abrirModalAddVenda(idVendaEdit = null) {
     vendaEmEdicaoId = idVendaEdit;
-    
     const containerInputs = document.getElementById('container-produtos-consumo');
     containerInputs.innerHTML = '';
 
     if (vendaEmEdicaoId) {
-        // MODO EDIÇÃO
         document.getElementById('titulo-modal-consumo').innerText = "Editar Consumo";
         const venda = vendasGlobal.find(v => v.id === vendaEmEdicaoId);
         
@@ -309,10 +364,9 @@ function abrirModalAddVenda(idVendaEdit = null) {
         document.getElementById('input-consumo-obs').value = venda.observacao || '';
 
         estoqueGlobal.forEach(p => {
-            // Busca se nessa venda específica a pessoa já havia pego esse produto
             let itemJaComprado = venda.itens_venda.find(iv => iv.produto_id === p.id);
             let qtdCompradaAntes = itemJaComprado ? itemJaComprado.qtd : 0;
-            let limiteDisponivel = p.qtd + qtdCompradaAntes; // Pode gastar o que já tem + o que tinha pego
+            let limiteDisponivel = p.qtd + qtdCompradaAntes;
 
             containerInputs.innerHTML += `
                 <div class="flex justify-between items-center bg-white p-2 border rounded shadow-sm">
@@ -320,12 +374,11 @@ function abrirModalAddVenda(idVendaEdit = null) {
                         <span class="text-xs font-bold text-gray-700 truncate w-32" title="${p.nome}">${p.nome}</span>
                         <span class="text-[10px] text-gray-500">R$ ${Number(p.preco).toFixed(2).replace('.',',')} | Disp: ${limiteDisponivel}</span>
                     </div>
-                    <input type="number" id="qtd-prod-${p.id}" class="w-16 border border-gray-300 rounded p-1 text-center text-sm" min="0" max="${limiteDisponivel}" value="${qtdCompradaAntes}" data-preco="${p.preco}" onchange="calcularTotalDinamico()">
+                    <input type="number" id="qtd-prod-${p.id}" class="w-16 border border-gray-300 rounded p-1 text-center text-sm focus:outline-blue-500" min="0" max="${limiteDisponivel}" value="${qtdCompradaAntes}" data-preco="${p.preco}" onchange="calcularTotalDinamico()">
                 </div>
             `;
         });
     } else {
-        // MODO NOVO
         document.getElementById('titulo-modal-consumo').innerText = "Registrar Consumo";
         document.getElementById('input-consumo-colaborador').value = '';
         document.getElementById('input-consumo-data').value = new Date().toISOString().split('T')[0];
@@ -338,7 +391,7 @@ function abrirModalAddVenda(idVendaEdit = null) {
                         <span class="text-xs font-bold text-gray-700 truncate w-32" title="${p.nome}">${p.nome}</span>
                         <span class="text-[10px] text-gray-500">R$ ${Number(p.preco).toFixed(2).replace('.',',')} | Disp: ${p.qtd}</span>
                     </div>
-                    <input type="number" id="qtd-prod-${p.id}" class="w-16 border border-gray-300 rounded p-1 text-center text-sm" min="0" max="${p.qtd}" value="0" data-preco="${p.preco}" onchange="calcularTotalDinamico()">
+                    <input type="number" id="qtd-prod-${p.id}" class="w-16 border border-gray-300 rounded p-1 text-center text-sm focus:outline-blue-500" min="0" max="${p.qtd}" value="0" data-preco="${p.preco}" onchange="calcularTotalDinamico()">
                 </div>
             `;
         });
@@ -366,11 +419,12 @@ async function salvarConsumo() {
     const obs = document.getElementById('input-consumo-obs').value;
     const totalVenda = calcularTotalDinamico();
 
-    if(!colaborador || !dataInput) return alert("Preencha o colaborador e a data!");
+    if(!colaborador || !dataInput) {
+        return avisoErro('Atenção', 'Preencha o nome do colaborador e a data!');
+    }
 
     let itensParaSalvar = [];
     
-    // Coleta o que foi marcado no modal
     estoqueGlobal.forEach(p => {
         let inputQtd = document.getElementById(`qtd-prod-${p.id}`);
         let qtdDesejada = parseInt(inputQtd.value);
@@ -379,51 +433,58 @@ async function salvarConsumo() {
         }
     });
 
-    if(itensParaSalvar.length === 0) return alert("Selecione pelo menos um produto!");
+    if(itensParaSalvar.length === 0) {
+        return avisoErro('Atenção', 'Selecione pelo menos um produto para registrar.');
+    }
 
-    toggleLoading(true);
+    try {
+        toggleLoading(true);
 
-    // SE FOR EDIÇÃO: Restaura o estoque antigo primeiro e apaga itens velhos
-    if (vendaEmEdicaoId) {
-        const vendaAntiga = vendasGlobal.find(v => v.id === vendaEmEdicaoId);
-        for(let iv of vendaAntiga.itens_venda) {
-            let p = estoqueGlobal.find(e => e.id === iv.produto_id);
-            if(p) {
-                await supabase.from('produtos').update({ qtd: p.qtd + iv.qtd }).eq('id', p.id);
+        if (vendaEmEdicaoId) {
+            const vendaAntiga = vendasGlobal.find(v => v.id === vendaEmEdicaoId);
+            for(let iv of vendaAntiga.itens_venda) {
+                let p = estoqueGlobal.find(e => e.id === iv.produto_id);
+                if(p) {
+                    await supabase.from('produtos').update({ qtd: p.qtd + iv.qtd }).eq('id', p.id);
+                }
             }
+            await supabase.from('itens_venda').delete().eq('venda_id', vendaEmEdicaoId);
         }
-        await supabase.from('itens_venda').delete().eq('venda_id', vendaEmEdicaoId);
-    }
 
-    // Cria ou Atualiza a Venda Principal
-    let idVendaProcessada = vendaEmEdicaoId;
-    
-    if (vendaEmEdicaoId) {
-        await supabase.from('vendas').update({
-            colaborador: colaborador, data_venda: dataInput, observacao: obs, total_devido: totalVenda
-        }).eq('id', vendaEmEdicaoId);
-    } else {
-        const { data: novaVenda } = await supabase.from('vendas').insert([{
-            colaborador: colaborador, data_venda: dataInput, observacao: obs, total_devido: totalVenda
-        }]).select();
-        idVendaProcessada = novaVenda[0].id;
-    }
-
-    // Insere os Novos Itens e Debita do Estoque
-    for(let item of itensParaSalvar) {
-        await supabase.from('itens_venda').insert([{
-            venda_id: idVendaProcessada, produto_id: item.id_produto, qtd: item.qtd, preco_unitario: item.preco
-        }]);
+        let idVendaProcessada = vendaEmEdicaoId;
         
-        // Pega a versão mais atual do banco pra n ter erro matemático (se for novo, é p.qtd. Se foi edição, o supabase ja recalculou acima)
-        const { data: pAtual } = await supabase.from('produtos').select('qtd').eq('id', item.id_produto).single();
-        await supabase.from('produtos').update({ qtd: pAtual.qtd - item.qtd }).eq('id', item.id_produto);
-    }
+        if (vendaEmEdicaoId) {
+            await supabase.from('vendas').update({
+                colaborador: colaborador, data_venda: dataInput, observacao: obs, total_devido: totalVenda
+            }).eq('id', vendaEmEdicaoId);
+        } else {
+            const { data: novaVenda, error: errVenda } = await supabase.from('vendas').insert([{
+                colaborador: colaborador, data_venda: dataInput, observacao: obs, total_devido: totalVenda
+            }]).select();
+            if(errVenda) throw errVenda;
+            idVendaProcessada = novaVenda[0].id;
+        }
 
-    fecharModal('modal-consumo');
-    vendaEmEdicaoId = null;
-    
-    await carregarDadosDoBanco(); // Atualiza painel com os dados fresquinhos do banco
+        for(let item of itensParaSalvar) {
+            await supabase.from('itens_venda').insert([{
+                venda_id: idVendaProcessada, produto_id: item.id_produto, qtd: item.qtd, preco_unitario: item.preco
+            }]);
+            
+            const { data: pAtual } = await supabase.from('produtos').select('qtd').eq('id', item.id_produto).single();
+            await supabase.from('produtos').update({ qtd: pAtual.qtd - item.qtd }).eq('id', item.id_produto);
+        }
+
+        fecharModal('modal-consumo');
+        vendaEmEdicaoId = null;
+        
+        await carregarDadosDoBanco();
+        avisoSucesso('Consumo salvo com sucesso!');
+
+    } catch (e) {
+        avisoErro('Erro', 'Ocorreu um erro ao salvar o consumo.');
+        console.error(e);
+        toggleLoading(false);
+    }
 }
 
 /* ==================================================
@@ -433,7 +494,6 @@ function renderizarFinanceiro() {
     const tbody = document.getElementById('tabela-financeiro');
     tbody.innerHTML = '';
     
-    // Agrupa dividas por colaborador
     let resumo = {};
     vendasGlobal.forEach(v => {
         if(!resumo[v.colaborador]) resumo[v.colaborador] = 0;
@@ -448,22 +508,24 @@ function renderizarFinanceiro() {
             </tr>
         `;
     });
+
+    if (Object.keys(resumo).length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-gray-500">Nenhum acerto financeiro pendente.</td></tr>`;
+    }
 }
 
 function calcularDashboard() {
-    // Total Geral
     let totalGeral = vendasGlobal.reduce((acc, v) => acc + Number(v.total_devido), 0);
     document.getElementById('dash-recebido').innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
     
-    // Total em Estoque
     let valorEstoque = estoqueGlobal.reduce((acc, p) => acc + (p.qtd * p.preco), 0);
     document.getElementById('dash-lucro').innerText = `R$ ${valorEstoque.toFixed(2).replace('.', ',')}`;
 
-    // Calculos da Semana Selecionada
     let itensSemana = 0;
     let valorSemana = 0;
 
     vendasGlobal.forEach(v => {
+        if(!v.data_venda) return;
         const [a, m, d] = v.data_venda.split('-');
         const dataVenda = new Date(a, m - 1, d);
         if(dataVenda >= semanaSelecionada.start && dataVenda <= semanaSelecionada.end) {
@@ -476,7 +538,6 @@ function calcularDashboard() {
     document.getElementById('dash-semana').innerText = `R$ ${valorSemana.toFixed(2).replace('.', ',')}`;
 }
 
-// Inicializa lendo do banco!
 window.onload = () => {
     carregarDadosDoBanco();
 };
