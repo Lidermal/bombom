@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Consumo TI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 font-sans flex h-screen overflow-hidden">
+
+    <aside class="w-64 bg-gray-900 text-white flex flex-col">
+        <div class="h-16 flex items-center justify-center border-b border-gray-800">
+            <h1 class="text-xl font-bold"><i class="fa-solid fa-candy-cane text-red-500 mr-2"></i>TI Consumo</h1>
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+            <button onclick="mudarAba('dashboard')" class="w-full flex items-center p-3 rounded hover:bg-gray-800 text-left transition" id="btn-dashboard">
+                <i class="fa-solid fa-chart-line w-6"></i> Dashboard
+            </button>
+            <button onclick="mudarAba('vendas')" class="w-full flex items-center p-3 rounded hover:bg-gray-800 text-left transition" id="btn-vendas">
+                <i class="fa-solid fa-cart-shopping w-6"></i> Controle de Vendas
+            </button>
+            <button onclick="mudarAba('estoque')" class="w-full flex items-center p-3 rounded hover:bg-gray-800 text-left transition" id="btn-estoque">
+                <i class="fa-solid fa-boxes-stacked w-6"></i> Estoque
+            </button>
+            <button onclick="mudarAba('financeiro')" class="w-full flex items-center p-3 rounded hover:bg-gray-800 text-left transition" id="btn-financeiro">
+                <i class="fa-solid fa-file-invoice-dollar w-6"></i> Financeiro
+            </button>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden">
+        <header class="h-16 bg-white shadow flex items-center justify-between px-6 z-10">
+            <h2 class="text-xl font-semibold text-gray-800" id="titulo-aba">Dashboard</h2>
+            <div class="flex items-center space-x-3">
+                <label class="text-sm text-gray-500">Semana de Referência:</label>
+                <select id="semana-filtro" class="border rounded p-1 text-sm bg-gray-50">
+                    <option value="atual">01/06 a 05/06</option>
+                    <option value="anterior">25/05 a 29/05</option>
+                </select>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-auto p-6">
+            
+            <section id="aba-dashboard" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+                        <p class="text-gray-500 text-sm">Total Recebido</p>
+                        <h3 class="text-2xl font-bold text-gray-800" id="dash-recebido">R$ 0,00</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
+                        <p class="text-gray-500 text-sm">Pendente (A Receber)</p>
+                        <h3 class="text-2xl font-bold text-gray-800" id="dash-pendente">R$ 0,00</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
+                        <p class="text-gray-500 text-sm">Lucro Estimado</p>
+                        <h3 class="text-2xl font-bold text-gray-800" id="dash-lucro">R$ 0,00</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500">
+                        <p class="text-gray-500 text-sm">Itens Vendidos (Semana)</p>
+                        <h3 class="text-2xl font-bold text-gray-800" id="dash-itens">0</h3>
+                    </div>
+                </div>
+            </section>
+
+            <section id="aba-vendas" class="hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-medium">Registro de Consumo</h3>
+                    <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onclick="abrirModal('modal-venda')">
+                        <i class="fa-solid fa-plus mr-1"></i> Registrar Consumo
+                    </button>
+                </div>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="p-4 font-semibold text-gray-600">Data</th>
+                                <th class="p-4 font-semibold text-gray-600">Colaborador</th>
+                                <th class="p-4 font-semibold text-gray-600">Produto</th>
+                                <th class="p-4 font-semibold text-gray-600">Qtd</th>
+                                <th class="p-4 font-semibold text-gray-600">Total (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-vendas" class="divide-y divide-gray-200">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="aba-estoque" class="hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-medium">Controle de Estoque</h3>
+                    <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onclick="abrirModal('modal-estoque')">
+                        <i class="fa-solid fa-plus mr-1"></i> Add Manualmente
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="grid-estoque">
+                    </div>
+            </section>
+
+            <section id="aba-financeiro" class="hidden space-y-4">
+                <h3 class="text-lg font-medium">Acertos e Pagamentos</h3>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="p-4 font-semibold text-gray-600">Colaborador</th>
+                                <th class="p-4 font-semibold text-gray-600">Total Devido</th>
+                                <th class="p-4 font-semibold text-gray-600">Status</th>
+                                <th class="p-4 font-semibold text-gray-600">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-financeiro" class="divide-y divide-gray-200">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div id="modal-estoque" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg w-96 p-6">
+            <h3 class="text-lg font-bold mb-4">Atualizar Estoque</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Produto</label>
+                    <input type="text" id="input-prod-nome" class="w-full border rounded p-2" placeholder="Ex: Cone Trufado">
+                </div>
+                <div class="flex space-x-4">
+                    <div class="w-1/2">
+                        <label class="block text-sm text-gray-600 mb-1">Quantidade</label>
+                        <input type="number" id="input-prod-qtd" class="w-full border rounded p-2" value="1">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="block text-sm text-gray-600 mb-1">Preço (R$)</label>
+                        <input type="number" step="0.10" id="input-prod-preco" class="w-full border rounded p-2" placeholder="2.50">
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="fecharModal('modal-estoque')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                <button onclick="salvarEstoque()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Salvar DB</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
