@@ -3,52 +3,50 @@
    ================================================== */
 const SUPABASE_URL = 'SUA_URL_AQUI_NO_FUTURO';
 const SUPABASE_KEY = 'SUA_CHAVE_AQUI_NO_FUTURO';
-// const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ==================================================
-   2. VARIÁVEIS GLOBAIS DE ESTADO
+   2. VARIÁVEIS GLOBAIS E ESTADO
    ================================================== */
-let dataGeracao = new Date(); // Para simular o 'Gerado' da imagem
-let semanaSelecionada = null; // Guardará o range da semana { start: Date, end: Date }
+let semanaSelecionada = null; 
 
-/* ==================================================
-   3. DADOS FAKE (MOCK) ATUALIZADOS PARA O NOVO VISUAL
-   ================================================== */
+// A SUA LISTA EXATA DE PRODUTOS
 let mockEstoque = [
-    { id: 1, nome: 'Bombom Chocolate', qtd: 15, preco: 2.50 },
-    { id: 2, nome: 'Cone Trufado', qtd: 8, preco: 12.00 },
-    { id: 3, nome: 'Brownie', qtd: 5, preco: 6.00 }
+    { id: 1, nome: 'Café', qtd: 20, preco: 1.00 },
+    { id: 2, nome: 'Chocolate', qtd: 15, preco: 2.50 },
+    { id: 3, nome: 'Chocolate 50%', qtd: 10, preco: 2.50 },
+    { id: 4, nome: 'Chocolate c/ Morango', qtd: 10, preco: 2.50 },
+    { id: 5, nome: 'Chocolate c/ Churros', qtd: 5, preco: 2.50 },
+    { id: 6, nome: 'Coco', qtd: 12, preco: 2.50 },
+    { id: 7, nome: 'Coco c/ chocolate', qtd: 8, preco: 2.50 },
+    { id: 8, nome: 'Castanha', qtd: 10, preco: 2.50 },
+    { id: 9, nome: 'Churros', qtd: 6, preco: 2.50 },
+    { id: 10, nome: 'Doce de Leite c/ Coco', qtd: 9, preco: 2.50 },
+    { id: 11, nome: 'Limão', qtd: 15, preco: 2.50 },
+    { id: 12, nome: 'Maracujá', qtd: 14, preco: 2.50 },
+    { id: 13, nome: 'Ninho c/ Morango', qtd: 10, preco: 2.50 },
+    { id: 14, nome: 'Paçoca', qtd: 8, preco: 2.50 },
+    { id: 15, nome: 'Oreo', qtd: 5, preco: 2.50 },
+    { id: 16, nome: 'Cone Trufado', qtd: 6, preco: 12.00 },
+    { id: 17, nome: 'Brownie', qtd: 4, preco: 6.00 }
 ];
 
-// Mock de vendas reformulado para estrutura semanal agrupada por dia
-// Data no formato DD/MM/YYYY para simulação
+// Dados da venda, salvando apenas o ID do produto e a quantidade comprada
 let mockVendas_Weekly = [
-    // Segunda-feira (01/06)
-    { id: 1, data: '01/06/2026', colaborador: 'Adriel', products: { Chocolate: 2, Ninho: 1, Coco: 0, Cone: 1, Brownie: 0 }, obs: '', note: 10, total_devido: 20.00 },
-    // Terça-feira (02/06)
-    { id: 2, data: '02/06/2026', colaborador: 'Gilvan', products: { Chocolate: 1, Ninho: 0, Coco: 0, Cone: 0, Brownie: 0 }, obs: '', note: 7, total_devido: 2.50 },
-    { id: 3, data: '02/06/2026', colaborador: 'Jonatas', products: { Chocolate: 0, Ninho: 0, Coco: 2, Cone: 0, Brownie: 1 }, obs: '', note: 9, total_devido: 11.00 },
-    { id: 4, data: '02/06/2026', colaborador: 'David', products: { Chocolate: 0, Ninho: 0, Coco: 0, Cone: 1, Brownie: 0 }, obs: 'Pagou uma parte', note: 9, total_devido: 12.00 },
-    { id: 5, data: '02/06/2026', colaborador: 'Janaelson', products: { Chocolate: 4, Ninho: 2, Coco: 0, Cone: 0, Brownie: 0 }, obs: 'Debitou o restante', note: 7, total_devido: 15.00 },
-    { id: 6, data: '02/06/2026', colaborador: 'Rodrigo', products: { Chocolate: 0, Ninho: 0, Coco: 0, Cone: 0, Brownie: 2 }, obs: 'Pagou o total', note: 7, total_devido: 12.00 },
-    // Quarta-feira (03/06)
-    { id: 7, data: '03/06/2026', colaborador: 'Janaelson', products: { Chocolate: 1, Ninho: 1, Coco: 1, Cone: 1, Brownie: 1 }, obs: '', note: 9, total_devido: 29.50 },
+    { id: 1, data: '02/06/2026', colaborador: 'Douglas', itens: [{ id_produto: 2, qtd: 2 }, { id_produto: 1, qtd: 1 }], obs: 'Pago no PIX', total_devido: 6.00 },
+    { id: 2, data: '03/06/2026', colaborador: 'Janaelson', itens: [{ id_produto: 16, qtd: 1 }], obs: '', total_devido: 12.00 }
 ];
 
 /* ==================================================
-   4. FUNÇÕES DE INTERFACE (UI) & LÓGICA DE SEMANA
+   3. FUNÇÕES DE INTERFACE (UI) & LÓGICA DE SEMANA
    ================================================== */
 function mudarAba(abaId) {
-    // Esconde todas as seções
     document.getElementById('aba-dashboard').classList.add('hidden');
     document.getElementById('aba-vendas').classList.add('hidden');
     document.getElementById('aba-estoque').classList.add('hidden');
     document.getElementById('aba-financeiro').classList.add('hidden');
     
-    // Mostra a selecionada
     document.getElementById(`aba-${abaId}`).classList.remove('hidden');
 
-    // Atualiza Titulo
     const titulos = {
         'dashboard': 'Visão Geral',
         'vendas': 'Controle de Consumo Semanal',
@@ -57,7 +55,6 @@ function mudarAba(abaId) {
     };
     document.getElementById('titulo-aba').innerText = titulos[abaId];
 
-    // Carrega os dados dependendo da aba, garantindo que o filtro esteja definido
     if(!semanaSelecionada) calcularSemanaAtual();
 
     if(abaId === 'estoque') renderizarEstoque();
@@ -66,53 +63,36 @@ function mudarAba(abaId) {
     if(abaId === 'dashboard') calcularDashboard();
 }
 
-function abrirModal(id) {
-    document.getElementById(id).classList.remove('hidden');
-}
-
-function fecharModal(id) {
-    document.getElementById(id).classList.add('hidden');
-}
-
-// LÓGICA DE SEMANA DE REFERÊNCIA
-function formatarData(date) {
-    return date.toLocaleDateString('pt-BR');
-}
+function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
 
 function getStartAndEndOfWeek(date) {
-    let day = date.getDay(); // 0-Dom, 1-Seg, ...
-    let diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajuste para segunda-feira
-    let startOfWeek = new Date(date.setDate(diff));
-    
-    // Copiar a data de início para calcular o fim (sexta-feira, +4 dias)
-    let endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 4);
-    
-    return { start: startOfWeek, end: endOfWeek };
+    let day = date.getDay();
+    let diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    let start = new Date(date.setDate(diff));
+    let end = new Date(start);
+    end.setDate(start.getDate() + 4);
+    return { start, end };
 }
 
 function calcularSemanaAtual() {
     let hoje = new Date();
-    semanaSelecionada = getStartAndEndOfWeek(new Date(hoje)); // Clonar date para não alterar hoje
+    semanaSelecionada = getStartAndEndOfWeek(new Date(hoje));
 }
 
 function popularWeekSelector() {
     const selector = document.getElementById('semana-filtro');
     selector.innerHTML = '';
+    let { start: semanaAtualStart } = getStartAndEndOfWeek(new Date());
 
-    let hoje = new Date();
-    let { start: semanaAtualStart } = getStartAndEndOfWeek(new Date(hoje));
-
-    // Adicionar as últimas 4 semanas e a atual
     for (let i = 0; i < 5; i++) {
         let diff = semanaAtualStart.getDate() - (i * 7);
         let start = new Date(semanaAtualStart);
         start.setDate(diff);
-
         let end = new Date(start);
         end.setDate(start.getDate() + 4);
 
-        let rangeText = `${formatarData(start)} a ${formatarData(end)}`;
+        let rangeText = `${start.toLocaleDateString('pt-BR')} a ${end.toLocaleDateString('pt-BR')}`;
         let option = document.createElement('option');
         option.value = rangeText;
         option.innerText = i === 0 ? `${rangeText} (Atual)` : rangeText;
@@ -122,44 +102,38 @@ function popularWeekSelector() {
 
 function alterarSemanaFiltro() {
     const selector = document.getElementById('semana-filtro');
-    const rangeText = selector.value;
+    const rangeText = selector.value.replace(' (Atual)', '');
+    const [inicioStr, fimStr] = rangeText.split(' a ');
     
-    // Parsear o range para objetos Date
-    const parts = rangeText.replace(' (Atual)', '').split(' a ');
-    const [dayStart, monthStart, yearStart] = parts[0].split('/');
-    const [dayEnd, monthEnd, yearEnd] = parts[1].split('/');
+    const [dI, mI, aI] = inicioStr.split('/');
+    const [dF, mF, aF] = fimStr.split('/');
 
     semanaSelecionada = {
-        start: new Date(yearStart, monthStart - 1, dayStart),
-        end: new Date(yearEnd, monthEnd - 1, dayEnd)
+        start: new Date(aI, mI - 1, dI),
+        end: new Date(aF, mF - 1, dF)
     };
-
-    // Recarregar a aba atual com os dados da nova semana
-    const abaAtualId = document.querySelector('header h2').id === 'titulo-aba' ? 'vendas' : 'dashboard'; // Simplificação
-    mudarAba('vendas'); // Recarrega sempre para a aba de vendas
+    mudarAba('vendas');
 }
 
 /* ==================================================
-   5. FUNÇÕES DE DADOS (SIMULANDO O BANCO)
+   4. ESTOQUE: CRUD Dinâmico
    ================================================== */
-
-// ESTOQUE (Inalterado)
 function renderizarEstoque() {
     const grid = document.getElementById('grid-estoque');
     grid.innerHTML = '';
     
-    let produtos = mockEstoque;
-
-    produtos.forEach(p => {
+    mockEstoque.forEach(p => {
+        let corEstoque = p.qtd <= 3 ? 'text-red-500' : 'text-blue-600';
         grid.innerHTML += `
-            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex justify-between items-center hover:shadow-md transition">
-                <div>
-                    <h4 class="font-bold text-gray-800">${p.nome}</h4>
-                    <p class="text-sm text-gray-500">R$ ${p.preco.toFixed(2)}</p>
-                </div>
-                <div class="text-center">
-                    <span class="block text-2xl font-bold text-blue-600">${p.qtd}</span>
-                    <span class="text-xs text-gray-400">unidades</span>
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 relative group">
+                <button onclick="excluirProduto(${p.id})" class="absolute top-2 right-2 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition" title="Excluir">
+                    <i class="fa-solid fa-trash text-sm"></i>
+                </button>
+                <h4 class="font-bold text-gray-800 text-sm truncate pr-6" title="${p.nome}">${p.nome}</h4>
+                <p class="text-xs text-gray-500 mb-2">R$ ${p.preco.toFixed(2).replace('.',',')}</p>
+                <div class="flex items-end justify-between border-t pt-2">
+                    <span class="text-xs text-gray-400 uppercase">Em estoque</span>
+                    <span class="block text-xl font-bold ${corEstoque}">${p.qtd} <span class="text-xs font-normal text-gray-500">un</span></span>
                 </div>
             </div>
         `;
@@ -167,102 +141,82 @@ function renderizarEstoque() {
 }
 
 function salvarEstoque() {
-    // ... (Inalterado) ...
+    const nome = document.getElementById('input-prod-nome').value;
+    const qtd = parseInt(document.getElementById('input-prod-qtd').value);
+    const preco = parseFloat(document.getElementById('input-prod-preco').value);
+
+    if(!nome || isNaN(qtd) || isNaN(preco)) return alert("Preencha todos os campos!");
+
+    mockEstoque.push({ id: Date.now(), nome, qtd, preco });
+    fecharModal('modal-estoque');
+    renderizarEstoque();
 }
 
-// VENDAS SEMANAIS (O GRANDE NOVO MOTOR VISUAL)
-function formatarPreco(valor) {
-    return valor.toFixed(2).replace('.', ',');
+function excluirProduto(id) {
+    if(confirm("Tem certeza que deseja excluir este produto do sistema?")) {
+        mockEstoque = mockEstoque.filter(p => p.id !== id);
+        renderizarEstoque();
+    }
 }
 
+/* ==================================================
+   5. VENDAS: Visualização Limpa
+   ================================================== */
 function renderizarVendasSemanais() {
     if (!semanaSelecionada) calcularSemanaAtual();
     const container = document.getElementById('container-vendas-semanais');
     container.innerHTML = '';
 
-    // Atualizar Info Header (Semana e Gerado)
-    document.getElementById('vendas-semana-info').innerText = `Semana: ${formatarData(semanaSelecionada.start)} a ${formatarData(semanaSelecionada.end)}`;
-    document.getElementById('vendas-gerado-info').innerText = `Gerado: ${dataGeracao.toLocaleDateString('pt-BR')}, ${dataGeracao.toLocaleTimeString('pt-BR')}`;
+    document.getElementById('vendas-semana-info').innerText = `Semana: ${semanaSelecionada.start.toLocaleDateString('pt-BR')} a ${semanaSelecionada.end.toLocaleDateString('pt-BR')}`;
+    document.getElementById('vendas-gerado-info').innerText = `Gerado: ${new Date().toLocaleString('pt-BR')}`;
 
-    // Filtrar as vendas para a semana selecionada
-    // Mock data está em formato DD/MM/YYYY
     const vendasSemana = mockVendas_Weekly.filter(v => {
         const [day, month, year] = v.data.split('/');
         const dataVenda = new Date(year, month - 1, day);
         return dataVenda >= semanaSelecionada.start && dataVenda <= semanaSelecionada.end;
     });
 
-    // Agrupar as vendas por dia da semana (Segunda a Sexta)
-    const agrupamentoDias = {
-        'Domingo': [],
-        'Segunda-feira': [],
-        'Terça-feira': [],
-        'Quarta-feira': [],
-        'Quinta-feira': [],
-        'Sexta-feira': [],
-        'Sábado': []
-    };
+    const agrupamentoDias = { 'Segunda-feira': [], 'Terça-feira': [], 'Quarta-feira': [], 'Quinta-feira': [], 'Sexta-feira': [] };
 
     vendasSemana.forEach(v => {
-        AgruparVendaPorDia(v, agrupamentoDias);
+        const [day, month, year] = v.data.split('/');
+        const dayName = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][new Date(year, month - 1, day).getDay()];
+        if(agrupamentoDias[dayName]) agrupamentoDias[dayName].push(v);
     });
 
-    // Mapeamento de cor da nota (igual a imagem)
-    const mapCorNota = (nota) => {
-        if (nota >= 8) return 'bg-green-100 text-green-900';
-        if (nota >= 6) return 'bg-yellow-100 text-yellow-900';
-        return 'bg-red-100 text-red-900';
-    };
-
-    const daysOfWeek = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira'];
-    let countRow = 0; // Para alternar cor de linha
-
-    daysOfWeek.forEach(day => {
+    Object.keys(agrupamentoDias).forEach(day => {
         const vendasDoDia = agrupamentoDias[day];
-        if (vendasDoDia.length === 0) return; // Pula dia sem venda
+        if (vendasDoDia.length === 0) return;
 
         let htmlDia = `
-            <div class="grid grid-cols-[1fr,50px] items-start mb-10 border border-gray-200 rounded-lg overflow-hidden bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <!-- Parte da Tabela -->
-                <div class="p-4">
-                    <table class="w-full text-left border-collapse border border-gray-200">
-                        <thead class="bg-blue-600 text-white text-xs">
+            <div class="grid grid-cols-[1fr,40px] items-start mb-6 border border-gray-200 rounded-lg overflow-hidden bg-white shadow">
+                <div class="p-0 overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-100 text-gray-700 text-xs uppercase border-b">
                             <tr>
-                                <th class="p-3 border">Colaborador</th>
-                                <th class="p-3 border">Chocolate</th>
-                                <th class="p-3 border">Ninho</th>
-                                <th class="p-3 border">Coco</th>
-                                <th class="p-3 border">Cone</th>
-                                <th class="p-3 border">Brownie</th>
-                                <th class="p-3 border">Observações</th>
-                                <th class="p-3 border">Ações</th>
+                                <th class="p-3 w-1/4">Colaborador</th>
+                                <th class="p-3 w-1/2">Itens Consumidos</th>
+                                <th class="p-3">Total</th>
+                                <th class="p-3">Observação</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
+                        <tbody class="divide-y divide-gray-100">
         `;
 
         vendasDoDia.forEach(v => {
-            const corNota = mapCorNota(v.note);
-            countRow++;
-            const rowClass = countRow % 2 === 0 ? 'bg-gray-50' : 'bg-white';
-
-            // Simulação de 'Sim' ou Quantidade para preencher a planilha
-            const formatQtd = (qtd) => qtd > 0 ? `<span class="text-xs font-bold text-gray-800">${qtd} un</span>` : '<span class="text-xs text-gray-400">-</span>';
+            // Lógica para montar a string bonita de "Itens Consumidos"
+            let badgesItens = v.itens.map(itemComprado => {
+                const produtoInfo = mockEstoque.find(p => p.id === itemComprado.id_produto);
+                const nomeProduto = produtoInfo ? produtoInfo.nome : 'Produto Deletado';
+                return `<span class="inline-block bg-blue-50 border border-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1 font-medium">${itemComprado.qtd}x ${nomeProduto}</span>`;
+            }).join('');
 
             htmlDia += `
-                <tr class="hover:bg-blue-50 ${rowClass}">
-                    <td class="p-3 border text-sm font-medium text-gray-800">${v.colaborador}</td>
-                    <td class="p-3 border text-center text-xs text-green-600 font-medium">${v.products.Chocolate > 0 ? 'Sim' : '-'}</td>
-                    <td class="p-3 border text-center text-xs text-green-600 font-medium">${v.products.Ninho > 0 ? 'Sim' : '-'}</td>
-                    <td class="p-3 border text-center text-xs text-green-600 font-medium">${v.products.Coco > 0 ? 'Sim' : '-'}</td>
-                    <td class="p-3 border text-center text-xs text-green-600 font-medium">${v.products.Cone > 0 ? 'Sim' : '-'}</td>
-                    <td class="p-3 border text-center text-xs text-green-600 font-medium">${v.products.Brownie > 0 ? 'Sim' : '-'}</td>
-                    <td class="p-3 border text-sm text-gray-700">${v.obs || '-'}</td>
-                    <td class="p-3 border text-center">
-                        <button class="bg-blue-100 p-2 rounded text-blue-700 hover:bg-blue-200 transition" onclick="abrirModalEditVenda(${v.id})">
-                            <i class="fa-solid fa-pen text-xs"></i>
-                        </button>
-                    </td>
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="p-3 text-sm font-semibold text-gray-800">${v.colaborador}</td>
+                    <td class="p-3">${badgesItens}</td>
+                    <td class="p-3 text-sm font-bold text-gray-700">R$ ${v.total_devido.toFixed(2).replace('.',',')}</td>
+                    <td class="p-3 text-xs text-gray-500">${v.obs || '-'}</td>
                 </tr>
             `;
         });
@@ -271,10 +225,8 @@ function renderizarVendasSemanais() {
                         </tbody>
                     </table>
                 </div>
-                
-                <!-- Parte da Legenda Vertical Vertical-lr -->
-                <div class="w-[50px] bg-gray-100 border-l flex items-center justify-center h-full">
-                    <span class="text-xs font-bold text-gray-600 uppercase tracking-widest vertical-text transform -rotate-180">${day}</span>
+                <div class="bg-blue-600 border-l border-blue-700 flex items-center justify-center h-full">
+                    <span class="text-xs font-bold text-white uppercase tracking-widest vertical-text transform -rotate-180">${day}</span>
                 </div>
             </div>
         `;
@@ -282,119 +234,112 @@ function renderizarVendasSemanais() {
     });
 }
 
-function AgruparVendaPorDia(v, agrupamento) {
-    const [day, month, year] = v.data.split('/');
-    const dataVenda = new Date(year, month - 1, day);
-    const dayName = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][dataVenda.getDay()];
-    agrupamento[dayName].push(v);
-}
-
-// MODAIS DE VENDA (ADD & EDIT)
+/* ==================================================
+   6. LÓGICA DE REGISTRO E BAIXA DE ESTOQUE
+   ================================================== */
 function abrirModalAddVenda() {
-    document.getElementById('titulo-modal-consumo').innerText = "Registrar Novo Consumo";
-    // Resetar formulário
+    document.getElementById('input-consumo-colaborador').value = '';
     document.getElementById('input-consumo-data').value = new Date().toISOString().split('T')[0];
     document.getElementById('input-consumo-obs').value = '';
-    // Resetar quantidades
-    document.getElementById('input-qtd-chocolate').value = 0;
-    document.getElementById('input-qtd-ninho').value = 0;
-    document.getElementById('input-qtd-coco').value = 0;
-    document.getElementById('input-qtd-cone').value = 0;
-    document.getElementById('input-qtd-brownie').value = 0;
     document.getElementById('total-consumo-modal').innerText = "R$ 0,00";
     
-    abrirModal('modal-consumo');
-}
+    // Gera os campos dinamicamente baseado no Estoque atual
+    const containerInputs = document.getElementById('container-produtos-consumo');
+    containerInputs.innerHTML = '';
 
-function abrirModalEditVenda(vendaId) {
-    document.getElementById('titulo-modal-consumo').innerText = `Editar Consumo (ID: ${vendaId})`;
-    
-    const venda = mockVendas_Weekly.find(v => v.id === vendaId);
-    if(!venda) return;
-
-    // Preencher formulário
-    document.getElementById('input-consumo-colaborador').value = venda.colaborador;
-    
-    // Data (converter DD/MM/YYYY para YYYY-MM-DD)
-    const [day, month, year] = venda.data.split('/');
-    document.getElementById('input-consumo-data').value = `${year}-${month}-${day}`;
-    
-    document.getElementById('input-consumo-obs').value = venda.obs;
-    
-    // Preencher quantidades
-    document.getElementById('input-qtd-chocolate').value = venda.products.Chocolate;
-    document.getElementById('input-qtd-ninho').value = venda.products.Ninho;
-    document.getElementById('input-qtd-coco').value = venda.products.Coco;
-    document.getElementById('input-qtd-cone').value = venda.products.Cone;
-    document.getElementById('input-qtd-brownie').value = venda.products.Brownie;
-    
-    // Calcular Total
-    let total = calcularTotalVenda(venda.products);
-    document.getElementById('total-consumo-modal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+    mockEstoque.forEach(p => {
+        containerInputs.innerHTML += `
+            <div class="flex justify-between items-center bg-white p-2 border rounded shadow-sm">
+                <div class="flex flex-col">
+                    <span class="text-xs font-bold text-gray-700 truncate w-32" title="${p.nome}">${p.nome}</span>
+                    <span class="text-[10px] text-gray-500">R$ ${p.preco.toFixed(2).replace('.',',')} | Resta: ${p.qtd}</span>
+                </div>
+                <input type="number" id="qtd-prod-${p.id}" class="w-16 border border-gray-300 rounded p-1 text-center text-sm" min="0" max="${p.qtd}" value="0" onchange="calcularTotalDinamico()">
+            </div>
+        `;
+    });
 
     abrirModal('modal-consumo');
 }
 
-function calcularTotalVenda(products) {
+function calcularTotalDinamico() {
     let total = 0;
-    // Map de preços fixos para simulação (no DB puxaremos das tabelas)
-    const precos = { Chocolate: 2.50, Ninho: 2.50, Coco: 2.50, Cone: 12.00, Brownie: 6.00 };
-    total += products.Chocolate * precos.Chocolate;
-    total += products.Ninho * precos.Ninho;
-    total += products.Coco * precos.Coco;
-    total += products.Cone * precos.Cone;
-    total += products.Brownie * precos.Brownie;
-    return total;
+    mockEstoque.forEach(p => {
+        let inputQtd = document.getElementById(`qtd-prod-${p.id}`);
+        if(inputQtd && parseInt(inputQtd.value) > 0) {
+            total += parseInt(inputQtd.value) * p.preco;
+        }
+    });
+    document.getElementById('total-consumo-modal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
 }
 
 function salvarConsumo() {
-    // FUTURO: await supabase.from('vendas').insert([...]);
-    alert("Venda salva no banco (simulação)!");
+    const colaborador = document.getElementById('input-consumo-colaborador').value;
+    const dataInput = document.getElementById('input-consumo-data').value;
+    const obs = document.getElementById('input-consumo-obs').value;
+
+    if(!colaborador || !dataInput) return alert("Preencha colaborador e data!");
+
+    let itensComprados = [];
+    let totalVenda = 0;
+
+    // Varre todos os produtos no estoque para ver quais foram comprados
+    mockEstoque.forEach(p => {
+        let inputQtd = document.getElementById(`qtd-prod-${p.id}`);
+        let qtd = parseInt(inputQtd.value);
+        
+        if (qtd > 0) {
+            if (qtd > p.qtd) return alert(`Quantidade de ${p.nome} excede o estoque!`);
+            
+            // 1. Adiciona à lista da compra
+            itensComprados.push({ id_produto: p.id, qtd: qtd });
+            totalVenda += qtd * p.preco;
+            
+            // 2. DIMINUI O ESTOQUE (Regra de Negócio solicitada)
+            p.qtd -= qtd; 
+        }
+    });
+
+    if(itensComprados.length === 0) return alert("Selecione pelo menos um produto consumido.");
+
+    // Formata data de YYYY-MM-DD para DD/MM/YYYY para o Mock
+    const [ano, mes, dia] = dataInput.split('-');
+    const dataFormatada = `${dia}/${mes}/${ano}`;
+
+    // Cria o registro da Venda
+    mockVendas_Weekly.push({
+        id: Date.now(),
+        data: dataFormatada,
+        colaborador: colaborador,
+        itens: itensComprados,
+        obs: obs,
+        total_devido: totalVenda
+    });
+
     fecharModal('modal-consumo');
-    // MOCK update local para ver no visual
-    // ...
-    renderizarVendasSemanais();
+    renderizarVendasSemanais(); // Atualiza a tela de Vendas
+    
+    // Como a aba estoque não está visível, ela será atualizada quando clicada, 
+    // mas os dados em memória já tiveram o estoque reduzido.
+    alert("Consumo registrado! O estoque foi reduzido e a venda salva.");
 }
 
-// FINANCEIRO (Inalterado)
+// Inicializações básicas (simplificadas para o Mock)
 function renderizarFinanceiro() {
     const tbody = document.getElementById('tabela-financeiro');
-    tbody.innerHTML = '';
-    
-    let devedores = [
-        { nome: 'Douglas', devido: 5.00, status: 'PENDENTE' },
-        { nome: 'Janaelson', devido: 44.50, status: 'PAGO - PIX' },
-        { nome: 'Adriel', devido: 20.00, status: 'PENDENTE' },
-        { nome: 'David', devido: 12.00, status: 'PARCIAL' },
-    ];
-
-    devedores.forEach(d => {
-        let badgeColor = 'bg-yellow-100 text-yellow-800';
-        if (d.status === 'PAGO - PIX') badgeColor = 'bg-green-100 text-green-800';
-        if (d.status === 'PARCIAL') badgeColor = 'bg-blue-100 text-blue-800';
-
-        tbody.innerHTML += `
-            <tr>
-                <td class="p-4 text-gray-800 font-medium">${d.nome}</td>
-                <td class="p-4 text-gray-800">R$ ${d.devido.toFixed(2)}</td>
-                <td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${badgeColor}">${d.status}</span></td>
-                <td class="p-4">
-                    ${d.status !== 'PAGO - PIX' ? '<button class="text-blue-600 hover:underline text-sm" onclick="alert(\'Abrir modal de baixa de pagamento\')">Dar Baixa</button>' : '-'}
-                </td>
-            </tr>
-        `;
-    });
+    tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">Use os dados mockados no código para testes.</td></tr>`;
 }
 
-// DASHBOARD (Inalterado)
 function calcularDashboard() {
-    document.getElementById('dash-recebido').innerText = 'R$ 44,50';
-    document.getElementById('dash-pendente').innerText = 'R$ 37,00';
-    document.getElementById('dash-lucro').innerText = 'R$ 28,80'; // Simulação
-    document.getElementById('dash-itens').innerText = '14';
+    document.getElementById('dash-recebido').innerText = 'R$ 0,00';
+    document.getElementById('dash-pendente').innerText = 'R$ 18,00';
+    document.getElementById('dash-itens').innerText = '4';
+    
+    // Calcula valor total em estoque
+    let valorEstoque = mockEstoque.reduce((acc, p) => acc + (p.qtd * p.preco), 0);
+    document.getElementById('dash-lucro').innerText = `R$ ${valorEstoque.toFixed(2).replace('.', ',')}`;
 }
 
-// Inicializa na primeira carga
 window.onload = () => {
     popularWeekSelector();
     calcularDashboard();
