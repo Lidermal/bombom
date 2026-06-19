@@ -86,7 +86,7 @@
                 <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500 hover:shadow-md transition">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-500 font-medium">Total Faturado (Geral)</p>
+                            <p class="text-sm text-gray-500 font-medium">Total Faturado</p>
                             <p class="text-2xl font-bold text-gray-900 mt-1" id="dashTotalFaturado">R$ 0,00</p>
                         </div>
                         <div class="bg-green-100 p-3 rounded-full text-green-600 text-2xl">💰</div>
@@ -184,7 +184,7 @@
 
         <!-- Financeiro -->
         <section id="financeiro" class="section fade-in hidden">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6">Resumo Financeiro por Colaborador</h2>
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Resumo Financeiro</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
@@ -399,14 +399,12 @@ async function loadData() {
 }
 
 function updateDatalists() {
-    // Atualiza lista de colaboradores
     const colaboradores = [...new Set(sales.map(s => s.colaborador))].sort();
     const colabList = document.getElementById('colaboradoresList');
     if (colabList) {
         colabList.innerHTML = colaboradores.map(c => `<option value="${c}">`).join('');
     }
     
-    // Atualiza lista de produtos
     const prodList = document.getElementById('produtosList');
     if (prodList) {
         prodList.innerHTML = products.map(p => `<option value="${p.nome}">`).join('');
@@ -443,14 +441,16 @@ function updateDashboard() {
     document.getElementById('dashTotalPendente').textContent = formatCurrency(totalPendente);
 
     const recentBody = document.getElementById('recentSalesBody');
+    if (sales.length === 0) {
+        recentBody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-400 italic">Nenhuma venda registrada</td></tr>';
+        return;
+    }
     recentBody.innerHTML = sales.slice(0, 10).map(sale => `
         <tr class="hover:bg-gray-50 transition">
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatDate(sale.data_venda)}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${sale.colaborador}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">${formatCurrency(sale.total_devido)}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                ${getStatusBadge(sale.status)}
-            </td>
+            <td class="px-6 py-4 whitespace-nowrap">${getStatusBadge(sale.status)}</td>
             <td class="px-6 py-4 text-sm text-gray-500 italic">${sale.observacao || '-'}</td>
         </tr>
     `).join('');
@@ -600,6 +600,20 @@ function loadInventory() {
 // FINANCEIRO
 // ============================================
 function loadFinancial() {
+    const totalRecebido = sales
+        .filter(s => s.status && s.status.startsWith('PAGO'))
+        .reduce((sum, s) => sum + (parseFloat(s.total_devido) || 0), 0);
+    
+    const totalPendente = sales
+        .filter(s => s.status === 'À PAGAR')
+        .reduce((sum, s) => sum + (parseFloat(s.total_devido) || 0), 0);
+    
+    const totalGeral = totalRecebido + totalPendente;
+    
+    document.getElementById('finTotalRecebido').textContent = formatCurrency(totalRecebido);
+    document.getElementById('finTotalPendente').textContent = formatCurrency(totalPendente);
+    document.getElementById('finTotalGeral').textContent = formatCurrency(totalGeral);
+    
     const colaboradores = {};
     sales.forEach(sale => {
         const colab = sale.colaborador;
@@ -614,14 +628,6 @@ function loadFinancial() {
             colaboradores[colab].pendente += valor;
         }
     });
-    
-    const totalRecebido = Object.values(colaboradores).reduce((sum, c) => sum + c.pago, 0);
-    const totalPendente = Object.values(colaboradores).reduce((sum, c) => sum + c.pendente, 0);
-    const totalGeral = totalRecebido + totalPendente;
-    
-    document.getElementById('finTotalRecebido').textContent = formatCurrency(totalRecebido);
-    document.getElementById('finTotalPendente').textContent = formatCurrency(totalPendente);
-    document.getElementById('finTotalGeral').textContent = formatCurrency(totalGeral);
     
     const tbody = document.getElementById('financialBody');
     const sortedColabs = Object.entries(colaboradores).sort((a, b) => b[1].total - a[1].total);
@@ -682,7 +688,7 @@ function addSaleItem(productId = '', qty = 1) {
     div.className = 'flex gap-2 items-center bg-gray-50 p-2 rounded-lg border border-gray-200';
     
     const productOptions = products.map(p => 
-        `<option value="${p.id}" ${p.id === productId ? 'selected' : ''} data-price="${p.preco}">${p.nome} (${formatCurrency(p.preco)})</option>`
+        `<option value="${p.id}" ${p.id == productId ? 'selected' : ''} data-price="${p.preco}">${p.nome} (${formatCurrency(p.preco)})</option>`
     ).join('');
     
     div.innerHTML = `
@@ -726,7 +732,7 @@ async function saveSale(event) {
         const productId = select.value;
         const qty = parseInt(item.querySelector('.qty-input').value) || 0;
         if (productId && qty > 0) {
-            const product = products.find(p => p.id === productId);
+            const product = products.find(p => p.id == productId);
             items.push({ produto_id: productId, qtd: qty, preco_unitario: product.preco });
             total += qty * product.preco;
         }
@@ -742,7 +748,7 @@ async function saveSale(event) {
         
         // Se for edição, restaura estoque antigo
         if (saleId) {
-            const oldSale = sales.find(s => s.id === saleId);
+            const oldSale = sales.find(s => s.id == saleId);
             if (oldSale?.itens_venda) {
                 for (const item of oldSale.itens_venda) {
                     await supabase.rpc('increment_product_qty', { prod_id: item.produto_id, qty_to_add: item.qtd });
@@ -799,7 +805,7 @@ async function saveSale(event) {
 }
 
 function editSale(saleId) {
-    const sale = sales.find(s => s.id === saleId);
+    const sale = sales.find(s => s.id == saleId);
     if (sale) openSaleModal(sale);
 }
 
@@ -847,11 +853,10 @@ async function saveProduct(event) {
         
         // Verifica se produto já existe (para somar estoque)
         const existingProduct = products.find(p => 
-            p.nome.toLowerCase() === nome.toLowerCase() && p.id !== productId
+            p.nome.toLowerCase() === nome.toLowerCase() && p.id != productId
         );
         
         if (existingProduct) {
-            // Soma quantidade ao existente
             const newQty = existingProduct.qtd + qtd;
             await supabase.from('produtos').update({ qtd: newQty, preco }).eq('id', existingProduct.id);
             Swal.fire({
@@ -879,7 +884,7 @@ async function saveProduct(event) {
 }
 
 function editProduct(productId) {
-    const product = products.find(p => p.id === productId);
+    const product = products.find(p => p.id == productId);
     if (product) openProductModal(product);
 }
 
