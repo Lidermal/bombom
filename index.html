@@ -2,8 +2,8 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Trufas - TI Team</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Controle de Trufas</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍫</text></svg>">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,130 +14,163 @@
     <style>
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .vertical-text { writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); }
+        /* Aplica texto vertical apenas em telas maiores que md (tablets/desktops) */
+        @media (min-width: 768px) {
+            .md\:vertical-text { writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); }
+        }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
 <body class="bg-gray-100 flex min-h-screen font-sans overflow-hidden">
 
+    <!-- OVERLAY LOADING -->
     <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center hidden">
         <i class="fa-solid fa-spinner fa-spin text-5xl text-white mb-4"></i>
         <p class="text-white font-medium text-lg">Sincronizando Banco de Dados...</p>
     </div>
 
-    <aside class="w-64 bg-gray-900 text-white flex flex-col shadow-2xl z-20">
+    <!-- SIDEBAR (APENAS DESKTOP) -->
+    <aside class="hidden md:flex w-64 bg-gray-900 text-white flex-col shadow-2xl z-20">
         <div class="p-6 border-b border-gray-800 flex items-center space-x-3">
             <span class="text-3xl">🍫</span>
             <div>
-                <h1 class="text-xl font-bold tracking-wide">Bombons Adriel & Ceci</h1>
+                <h1 class="text-xl font-bold tracking-wide">Bombons Adriel & Cecilia</h1>
                 <p class="text-xs text-gray-400">Consumo & Estoque</p>
             </div>
         </div>
         <nav class="flex-1 mt-4 space-y-1 px-2">
-            <button onclick="mudarAba('dashboard', this)" class="menu-btn w-full flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded transition-all">
+            <button onclick="mudarAba('dashboard', this)" data-aba="dashboard" class="menu-btn w-full flex items-center px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded transition-all">
                 <i class="fa-solid fa-chart-pie w-6"></i> Dashboard
             </button>
-            <button onclick="mudarAba('semanal', this)" class="menu-btn w-full flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded transition-all">
+            <button onclick="mudarAba('semanal', this)" data-aba="semanal" class="menu-btn w-full flex items-center px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded transition-all">
                 <i class="fa-solid fa-calendar-week w-6"></i> Controle Semanal
             </button>
-            <button onclick="mudarAba('estoque', this)" class="menu-btn w-full flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded transition-all">
+            <button onclick="mudarAba('estoque', this)" data-aba="estoque" class="menu-btn w-full flex items-center px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded transition-all">
                 <i class="fa-solid fa-boxes-stacked w-6"></i> Estoque
             </button>
-            <button onclick="mudarAba('financeiro', this)" class="menu-btn w-full flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded transition-all">
+            <button onclick="mudarAba('financeiro', this)" data-aba="financeiro" class="menu-btn w-full flex items-center px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded transition-all">
                 <i class="fa-solid fa-sack-dollar w-6"></i> Financeiro
             </button>
         </nav>
     </aside>
 
-    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
+    <!-- BOTTOM NAV (APENAS MOBILE) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900 text-white flex justify-between z-40 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.2)] pb-safe">
+        <button onclick="mudarAba('dashboard', this)" data-aba="dashboard" class="menu-btn flex-1 flex flex-col items-center justify-center py-3 text-gray-400 hover:text-white transition-colors">
+            <i class="fa-solid fa-chart-pie text-xl mb-1"></i><span class="text-[10px] font-bold uppercase tracking-wider">Painel</span>
+        </button>
+        <button onclick="mudarAba('semanal', this)" data-aba="semanal" class="menu-btn flex-1 flex flex-col items-center justify-center py-3 text-gray-400 hover:text-white transition-colors">
+            <i class="fa-solid fa-calendar-week text-xl mb-1"></i><span class="text-[10px] font-bold uppercase tracking-wider">Semanal</span>
+        </button>
+        <button onclick="mudarAba('estoque', this)" data-aba="estoque" class="menu-btn flex-1 flex flex-col items-center justify-center py-3 text-gray-400 hover:text-white transition-colors">
+            <i class="fa-solid fa-boxes-stacked text-xl mb-1"></i><span class="text-[10px] font-bold uppercase tracking-wider">Estoque</span>
+        </button>
+        <button onclick="mudarAba('financeiro', this)" data-aba="financeiro" class="menu-btn flex-1 flex flex-col items-center justify-center py-3 text-gray-400 hover:text-white transition-colors">
+            <i class="fa-solid fa-sack-dollar text-xl mb-1"></i><span class="text-[10px] font-bold uppercase tracking-wider">Caixa</span>
+        </button>
+    </nav>
+
+    <!-- ÁREA PRINCIPAL -->
+    <!-- pb-[72px] garante que a navegação do celular não esconda o final da página -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50 pb-[72px] md:pb-0">
         
-        <header class="bg-white shadow-sm p-4 flex justify-between items-center z-10 border-b">
-            <h2 id="tituloAba" class="text-xl font-bold text-gray-800">Dashboard</h2>
-            <div id="containerFiltroSemana" class="hidden flex items-center space-x-2 bg-gray-100 p-1.5 rounded-lg border border-gray-200">
+        <header class="bg-white shadow-sm p-4 flex flex-col md:flex-row md:justify-between md:items-center z-10 border-b gap-3 md:gap-0">
+            <h2 id="tituloAba" class="text-xl font-bold text-gray-800 text-center md:text-left">Dashboard</h2>
+            <div id="containerFiltroSemana" class="hidden flex justify-center items-center space-x-2 bg-gray-100 p-2 md:p-1.5 rounded-lg border border-gray-200 w-full md:w-auto">
                 <i class="fa-solid fa-filter text-gray-500 ml-2"></i>
-                <select id="filtroSemana" class="bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer text-gray-700" onchange="carregarVisaoSemanal()">
+                <select id="filtroSemana" class="bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer text-gray-700 w-full truncate" onchange="carregarVisaoSemanal()">
                     <option value="">Carregando semanas...</option>
                 </select>
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-6 relative">
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 relative">
             
-            <section id="aba-dashboard" class="aba-conteudo hidden space-y-6 fade-in">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
+            <!-- DASHBOARD -->
+            <section id="aba-dashboard" class="aba-conteudo hidden space-y-4 md:space-y-6 fade-in">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
+                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border-l-4 border-green-500 flex flex-col justify-center">
                         <p class="text-sm text-gray-500 font-medium">Faturamento Geral</p>
                         <h3 class="text-2xl font-bold text-gray-900 mt-1" id="dashFatGeral">R$ 0,00</h3>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border-l-4 border-blue-500 flex flex-col justify-center">
                         <p class="text-sm text-gray-500 font-medium">Valor em Estoque</p>
                         <h3 class="text-2xl font-bold text-gray-900 mt-1" id="dashValEstoque">R$ 0,00</h3>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500">
-                        <p class="text-sm text-gray-500 font-medium">Recebido (Semana Atual)</p>
+                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border-l-4 border-emerald-500 flex flex-col justify-center">
+                        <p class="text-sm text-gray-500 font-medium">Recebido (Semana)</p>
                         <h3 class="text-2xl font-bold text-green-600 mt-1" id="dashRecSemana">R$ 0,00</h3>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500">
-                        <p class="text-sm text-gray-500 font-medium">Pendente (Semana Atual)</p>
+                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border-l-4 border-red-500 flex flex-col justify-center">
+                        <p class="text-sm text-gray-500 font-medium">Pendente (Semana)</p>
                         <h3 class="text-2xl font-bold text-red-600 mt-1" id="dashPendSemana">R$ 0,00</h3>
                     </div>
                 </div>
             </section>
 
-            <section id="aba-semanal" class="aba-conteudo hidden space-y-6 fade-in">
-                <div class="flex justify-between items-center bg-blue-50 border border-blue-100 p-3 rounded-lg">
-                    <p class="text-sm text-blue-800 font-medium"><i class="fa-solid fa-circle-info mr-2"></i>Se você registrar uma nova venda para a mesma pessoa no mesmo dia, o sistema somará os produtos automaticamente.</p>
-                    <button onclick="abrirModalVenda()" class="bg-gray-900 text-white px-5 py-2 rounded-lg hover:bg-gray-800 transition shadow shrink-0 font-medium">
-                        <i class="fa-solid fa-plus mr-1"></i> Registrar Venda
+            <!-- CONTROLE SEMANAL -->
+            <section id="aba-semanal" class="aba-conteudo hidden space-y-4 md:space-y-6 fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-center bg-blue-50 border border-blue-100 p-3 rounded-lg gap-3">
+                    <p class="text-xs md:text-sm text-blue-800 font-medium text-center md:text-left"><i class="fa-solid fa-circle-info mr-2"></i>Registros da mesma pessoa no mesmo dia são somados automaticamente.</p>
+                    <button onclick="abrirModalVenda()" class="w-full md:w-auto bg-gray-900 text-white px-5 py-3 md:py-2 rounded-lg hover:bg-gray-800 transition shadow flex justify-center items-center font-medium">
+                        <i class="fa-solid fa-plus mr-2"></i> Registrar Venda
                     </button>
                 </div>
                 <div id="containerDiasSemana" class="space-y-6"></div>
             </section>
 
-            <section id="aba-estoque" class="aba-conteudo hidden space-y-6 fade-in">
+            <!-- ESTOQUE -->
+            <section id="aba-estoque" class="aba-conteudo hidden space-y-4 md:space-y-6 fade-in">
                 <div class="flex justify-end">
-                    <button onclick="abrirModalProduto()" class="bg-gray-900 text-white px-5 py-2.5 rounded-lg hover:bg-gray-800 transition shadow flex items-center font-medium">
+                    <button onclick="abrirModalProduto()" class="w-full md:w-auto bg-gray-900 text-white px-5 py-3 md:py-2.5 rounded-lg hover:bg-gray-800 transition shadow flex justify-center items-center font-medium">
                         <i class="fa-solid fa-plus mr-2"></i> Novo Produto
                     </button>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="p-4 text-sm font-semibold text-gray-600">Produto</th>
-                                <th class="p-4 text-sm font-semibold text-gray-600">Qtd em Estoque</th>
-                                <th class="p-4 text-sm font-semibold text-gray-600">Preço Unitário</th>
-                                <th class="p-4 text-sm font-semibold text-gray-600 text-center">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabelaEstoque" class="divide-y divide-gray-100"></tbody>
-                    </table>
+                    <div class="overflow-x-auto w-full">
+                        <table class="w-full text-left min-w-[500px] md:min-w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="p-4 text-xs md:text-sm font-semibold text-gray-600">Produto</th>
+                                    <th class="p-4 text-xs md:text-sm font-semibold text-gray-600">Em Estoque</th>
+                                    <th class="p-4 text-xs md:text-sm font-semibold text-gray-600">Preço Unitário</th>
+                                    <th class="p-4 text-xs md:text-sm font-semibold text-gray-600 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaEstoque" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
-            <section id="aba-financeiro" class="aba-conteudo hidden space-y-6 fade-in">
+            <!-- FINANCEIRO -->
+            <section id="aba-financeiro" class="aba-conteudo hidden space-y-4 md:space-y-6 fade-in">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="p-4 text-sm font-semibold text-gray-600">Colaborador</th>
-                                <th class="p-4 text-sm font-semibold text-green-600">Total Pago</th>
-                                <th class="p-4 text-sm font-semibold text-red-600">Total Pendente</th>
-                                <th class="p-4 text-sm font-semibold text-blue-600">Total Acumulado</th>
-                                <th class="p-4 text-sm font-semibold text-gray-600 text-center">Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabelaFinanceiro" class="divide-y divide-gray-100"></tbody>
-                    </table>
+                    <div class="overflow-x-auto w-full">
+                        <table class="w-full text-left min-w-[700px] md:min-w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="p-4 text-xs md:text-sm font-semibold text-gray-600">Colaborador</th>
+                                    <th class="p-4 text-xs md:text-sm font-semibold text-green-600">Total Pago</th>
+                                    <th class="p-4 text-xs md:text-sm font-semibold text-red-600">Pendente</th>
+                                    <th class="p-4 text-xs md:text-sm font-semibold text-blue-600">Total Acumulado</th>
+                                    <th class="p-4 text-xs md:text-sm font-semibold text-gray-600 text-center">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaFinanceiro" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
         </div>
     </main>
 
+    <!-- MODAL DE PAGAMENTO (FINANCEIRO) -->
     <div id="modalPagamento" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm p-4">
         <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden">
             <div class="bg-gray-50 p-4 border-b flex justify-between items-center">
@@ -148,76 +181,78 @@
                 <div class="text-center mb-4">
                     <p class="text-gray-500 text-sm">Colaborador</p>
                     <h4 class="text-xl font-bold text-gray-900" id="pagColabNome">Nome</h4>
-                    <p class="text-sm mt-1">Dívida Total: <span class="font-bold text-red-600" id="pagFaltaView">R$ 0,00</span></p>
+                    <p class="text-sm mt-1">Dívida: <span class="font-bold text-red-600" id="pagFaltaView">R$ 0,00</span></p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Valor que está sendo pago agora</label>
-                    <input type="number" id="pagValorInp" required min="0.01" step="0.01" class="w-full border rounded-lg p-2 text-center text-xl font-bold text-green-700 focus:ring-2 focus:ring-gray-900 outline-none">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Valor do Pagamento Agora</label>
+                    <input type="number" id="pagValorInp" required min="0.01" step="0.01" class="w-full border rounded-lg p-3 text-center text-xl font-bold text-green-700 focus:ring-2 focus:ring-gray-900 outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Método de Pagamento</label>
-                    <select id="pagMetodoInp" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Método</label>
+                    <select id="pagMetodoInp" class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-gray-900 outline-none">
                         <option value="PIX">PIX</option>
                         <option value="ESPÉCIE">ESPÉCIE</option>
                     </select>
                 </div>
-                <button onclick="processarPagamento()" class="w-full mt-2 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 shadow">Abater Dívida</button>
+                <button onclick="processarPagamento()" class="w-full mt-2 bg-green-600 text-white font-bold py-3.5 rounded-lg hover:bg-green-700 shadow">Confirmar Pagamento</button>
             </div>
         </div>
     </div>
 
+    <!-- MODAL DE PRODUTO -->
     <div id="modalProduto" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm p-4">
         <div class="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden">
             <div class="bg-gray-50 p-4 border-b flex justify-between items-center">
                 <h3 class="font-bold text-lg text-gray-800" id="tituloModalProduto">Novo Produto</h3>
                 <button onclick="fecharModal('modalProduto')" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
             </div>
-            <form onsubmit="salvarProduto(event)" class="p-6 space-y-4">
+            <form onsubmit="salvarProduto(event)" class="p-4 md:p-6 space-y-4">
                 <input type="hidden" id="prodId">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Produto</label>
-                    <input type="text" id="prodNome" required list="listaProdutos" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none" placeholder="Ex: Cone Trufado">
+                    <input type="text" id="prodNome" required list="listaProdutos" class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-gray-900 outline-none">
                     <datalist id="listaProdutos"></datalist>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
-                        <input type="number" id="prodQtd" required min="0" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none" value="1">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Qtd.</label>
+                        <input type="number" id="prodQtd" required min="0" class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-gray-900 outline-none" value="1">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Preço Atual (R$)</label>
-                        <input type="number" id="prodPreco" required min="0" step="0.01" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none" placeholder="2.50">
+                        <input type="number" id="prodPreco" required min="0" step="0.01" class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-gray-900 outline-none" placeholder="2.50">
                     </div>
                 </div>
-                <div class="pt-4 flex justify-end space-x-3 border-t mt-6">
-                    <button type="button" onclick="fecharModal('modalProduto')" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 font-medium">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium">Salvar Estoque</button>
+                <div class="pt-4 flex flex-col-reverse md:flex-row md:justify-end md:space-x-3 border-t mt-6 gap-3 md:gap-0">
+                    <button type="button" onclick="fecharModal('modalProduto')" class="w-full md:w-auto px-4 py-3 md:py-2 border rounded-lg text-gray-600 hover:bg-gray-50 font-medium">Cancelar</button>
+                    <button type="submit" class="w-full md:w-auto px-4 py-3 md:py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium">Salvar Estoque</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- MODAL DE VENDA -->
     <div id="modalVenda" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm p-4">
         <div class="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
             <div class="bg-gray-50 p-4 border-b flex justify-between items-center shrink-0">
                 <h3 class="font-bold text-lg text-gray-800" id="tituloModalVenda">Registrar Venda</h3>
                 <button onclick="fecharModal('modalVenda')" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
             </div>
-            <form onsubmit="salvarVenda(event)" class="p-6 flex-1 overflow-y-auto space-y-4">
+            <form onsubmit="salvarVenda(event)" class="p-4 md:p-6 flex-1 overflow-y-auto space-y-4">
                 <input type="hidden" id="vendaId">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Data</label>
-                        <input type="date" id="vendaData" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none">
+                        <input type="date" id="vendaData" required class="w-full border rounded-lg p-3 md:p-2 focus:ring-2 focus:ring-gray-900 outline-none">
                     </div>
-                    <div class="col-span-2">
+                    <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Colaborador</label>
-                        <input type="text" id="vendaColab" required list="listaColab" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none">
+                        <input type="text" id="vendaColab" required list="listaColab" class="w-full border rounded-lg p-3 md:p-2 focus:ring-2 focus:ring-gray-900 outline-none">
                         <datalist id="listaColab"></datalist>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Status Base</label>
-                        <select id="vendaStatus" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none font-medium text-gray-700">
+                        <select id="vendaStatus" class="w-full border rounded-lg p-3 md:p-2 focus:ring-2 focus:ring-gray-900 outline-none font-medium text-gray-700">
                             <option value="PAGO - PIX">PAGO - PIX</option>
                             <option value="PAGO - ESPÉCIE">PAGO - ESPÉCIE</option>
                             <option value="À PAGAR">À PAGAR</option>
@@ -227,32 +262,33 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Valor Já Recebido (R$) <span class="text-xs text-gray-400">Opcional</span></label>
-                        <input type="number" id="vendaValorPago" step="0.01" min="0" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none text-green-700 font-bold" placeholder="Auto">
+                        <input type="number" id="vendaValorPago" step="0.01" min="0" class="w-full border rounded-lg p-3 md:p-2 focus:ring-2 focus:ring-gray-900 outline-none text-green-700 font-bold" placeholder="Automático">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Observação <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
-                        <input type="text" id="vendaObs" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none" placeholder="Ex: Faltou R$ 1,00">
+                        <input type="text" id="vendaObs" class="w-full border rounded-lg p-3 md:p-2 focus:ring-2 focus:ring-gray-900 outline-none" placeholder="Ex: Faltou R$ 1,00">
                     </div>
                 </div>
                 
-                <div class="mt-6 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div class="mt-6 border border-gray-200 rounded-lg p-3 md:p-4 bg-gray-50">
                     <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-bold text-gray-700"><i class="fa-solid fa-cart-shopping mr-2"></i>Itens Consumidos</h4>
-                        <button type="button" onclick="adicionarLinhaProduto()" class="text-sm bg-white border border-gray-300 px-3 py-1.5 rounded text-gray-700 font-medium hover:bg-gray-100">+ Add Produto</button>
+                        <h4 class="font-bold text-gray-700 text-sm md:text-base"><i class="fa-solid fa-cart-shopping mr-2"></i>Itens Consumidos</h4>
+                        <button type="button" onclick="adicionarLinhaProduto()" class="text-xs md:text-sm bg-white border border-gray-300 px-3 py-2 rounded text-gray-700 font-medium hover:bg-gray-100">+ Add Produto</button>
                     </div>
                     <div id="containerItensVenda" class="space-y-3"></div>
                 </div>
             </form>
-            <div class="p-4 border-t bg-gray-50 flex justify-between items-center shrink-0 rounded-b-xl">
-                <div class="text-gray-800 font-medium">Total Calculado: <span id="vendaTotalView" class="text-2xl font-bold text-gray-900 ml-2">R$ 0,00</span></div>
-                <div class="flex space-x-3">
-                    <button type="button" onclick="fecharModal('modalVenda')" class="px-5 py-2 border rounded-lg text-gray-600 hover:bg-gray-100 font-medium bg-white">Cancelar</button>
-                    <button type="button" onclick="document.querySelector('#modalVenda form').requestSubmit()" class="px-5 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium shadow">Confirmar e Salvar</button>
+            <div class="p-4 border-t bg-gray-50 flex flex-col md:flex-row md:justify-between md:items-center shrink-0 rounded-b-xl gap-4 md:gap-0">
+                <div class="text-gray-800 font-medium text-center md:text-left">Total Calculado: <span id="vendaTotalView" class="text-2xl font-bold text-gray-900 ml-2 block md:inline">R$ 0,00</span></div>
+                <div class="flex flex-col-reverse md:flex-row space-y-reverse space-y-3 md:space-y-0 md:space-x-3 w-full md:w-auto">
+                    <button type="button" onclick="fecharModal('modalVenda')" class="w-full md:w-auto px-5 py-3 md:py-2 border rounded-lg text-gray-600 hover:bg-gray-100 font-medium bg-white">Cancelar</button>
+                    <button type="button" onclick="document.querySelector('#modalVenda form').requestSubmit()" class="w-full md:w-auto px-5 py-3 md:py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium shadow">Confirmar e Salvar</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- SCRIPT PRINCIPAL -->
     <script>
         // API SUPABASE
         const SUPABASE_URL = 'https://jyjrzczpuyomatskebfk.supabase.co';
@@ -269,22 +305,39 @@
         const alertaSucesso = (msg) => Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: msg, showConfirmButton: false, timer: 3000 });
         const alertaErro = (msg) => Swal.fire({ icon: 'error', title: 'Atenção', text: msg, confirmButtonColor: '#1f2937' });
 
-        // NAVEGAÇÃO
+        // NAVEGAÇÃO RESPONSIVA
         function mudarAba(abaId, elementoBotao = null) {
             document.querySelectorAll('.aba-conteudo').forEach(aba => aba.classList.add('hidden'));
-            document.querySelectorAll('.menu-btn').forEach(btn => { btn.classList.remove('bg-gray-800', 'text-white', 'border-l-4', 'border-white'); btn.classList.add('text-gray-300'); });
+            
+            document.querySelectorAll('.menu-btn').forEach(btn => { 
+                btn.classList.remove('bg-gray-800', 'text-white', 'border-l-4', 'border-white'); 
+                btn.classList.add('text-gray-400');
+            });
             
             const abaTarget = document.getElementById(`aba-${abaId}`);
             if(abaTarget) abaTarget.classList.remove('hidden');
 
-            if(elementoBotao) {
-                elementoBotao.classList.remove('text-gray-300');
-                elementoBotao.classList.add('bg-gray-800', 'text-white', 'border-l-4', 'border-white');
-            }
+            document.querySelectorAll(`.menu-btn[data-aba="${abaId}"]`).forEach(btn => {
+                btn.classList.remove('text-gray-400');
+                if(btn.closest('aside')) {
+                    btn.classList.add('bg-gray-800', 'text-white', 'border-l-4', 'border-white');
+                } else {
+                    btn.classList.add('text-white');
+                }
+            });
 
             const titulos = { 'dashboard': 'Dashboard', 'semanal': 'Controle Semanal', 'estoque': 'Estoque', 'financeiro': 'Financeiro' };
             document.getElementById('tituloAba').innerText = titulos[abaId] || 'Controle';
-            document.getElementById('containerFiltroSemana').classList.toggle('hidden', abaId !== 'semanal');
+            
+            // O filtro de semana fica visível flexível
+            const containerFiltro = document.getElementById('containerFiltroSemana');
+            if(abaId === 'semanal') {
+                containerFiltro.classList.remove('hidden');
+                containerFiltro.classList.add('flex');
+            } else {
+                containerFiltro.classList.add('hidden');
+                containerFiltro.classList.remove('flex');
+            }
 
             if(abaId === 'dashboard') renderizarDashboard();
             if(abaId === 'semanal') carregarVisaoSemanal();
@@ -307,7 +360,7 @@
                 
                 const abaAtiva = document.querySelector('.aba-conteudo:not(.hidden)');
                 if(abaAtiva) mudarAba(abaAtiva.id.replace('aba-', ''));
-                else mudarAba('dashboard', document.querySelector('.menu-btn'));
+                else mudarAba('dashboard');
 
             } catch (err) { alertaErro('Falha na comunicação com o banco.'); console.error(err); }
             toggleLoading(false);
@@ -327,13 +380,13 @@
             if(bancoProdutos.length === 0) return tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400">Vazio.</td></tr>`;
             
             tbody.innerHTML = bancoProdutos.map(p => `
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="p-4 font-bold text-gray-800">${p.nome}</td>
-                    <td class="p-4"><span class="px-2 py-1 rounded text-sm font-bold ${p.qtd <= 3 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${p.qtd} un</span></td>
-                    <td class="p-4 text-gray-600">${formatarMoeda(p.preco)}</td>
+                <tr class="hover:bg-gray-50 transition border-b border-gray-100">
+                    <td class="p-4 font-bold text-gray-800 text-sm">${p.nome}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${p.qtd <= 3 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${p.qtd} un</span></td>
+                    <td class="p-4 text-gray-600 text-sm">${formatarMoeda(p.preco)}</td>
                     <td class="p-4 text-center">
-                        <button onclick="editarProduto(${p.id})" class="text-blue-600 hover:text-blue-800 mx-2" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deletarProduto(${p.id})" class="text-red-500 hover:text-red-700 mx-2" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="editarProduto(${p.id})" class="text-blue-600 hover:text-blue-800 mx-2 p-2" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deletarProduto(${p.id})" class="text-red-500 hover:text-red-700 mx-2 p-2" title="Excluir"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
             `).join('');
@@ -358,7 +411,7 @@
         function editarProduto(id) { const p = bancoProdutos.find(x => x.id === id); if(p) abrirModalProduto(p); }
 
         async function deletarProduto(id) {
-            const result = await Swal.fire({ title: 'Remover produto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Sim, excluir' });
+            const result = await Swal.fire({ title: 'Remover produto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Excluir', cancelButtonText: 'Cancelar' });
             if (result.isConfirmed) {
                 toggleLoading(true);
                 try {
@@ -383,7 +436,7 @@
                 if (existente) {
                     const qtdFinal = existente.qtd + qtdAdicional;
                     await supabaseClient.from('produtos').update({ qtd: qtdFinal, preco: preco }).eq('id', existente.id);
-                    alertaSucesso(`Somado! Agora temos ${qtdFinal} de ${nome}.`);
+                    alertaSucesso(`Somado! Temos ${qtdFinal}x ${nome}.`);
                 } else if (id) {
                     await supabaseClient.from('produtos').update({ nome, qtd: qtdAdicional, preco }).eq('id', id);
                     alertaSucesso('Atualizado!');
@@ -456,7 +509,7 @@
                 let conteudoHTML = '';
                 
                 if(vendasDoDia.length === 0) {
-                    conteudoHTML = `<p class="p-6 text-center text-gray-400 italic">Sem registros neste dia.</p>`;
+                    conteudoHTML = `<p class="p-6 text-center text-gray-400 italic text-sm">Sem registros.</p>`;
                 } else {
                     conteudoHTML = `<div class="divide-y divide-gray-100">`;
                     vendasDoDia.forEach(v => {
@@ -464,30 +517,30 @@
                         const pg = parseFloat(v.valor_pago || 0);
                         
                         let badgeStatus = '';
-                        if (pg >= dev) {
-                            if(v.status.includes('ESPÉCIE')) badgeStatus = `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">$$ Espécie</span>`;
-                            else badgeStatus = `<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-bold">PIX</span>`;
+                        if (pg >= dev && dev > 0) {
+                            if(v.status.includes('ESPÉCIE')) badgeStatus = `<span class="bg-blue-100 text-blue-800 text-[10px] px-2 py-1 rounded font-bold">$$ Espécie</span>`;
+                            else badgeStatus = `<span class="bg-green-100 text-green-800 text-[10px] px-2 py-1 rounded font-bold">PIX</span>`;
                         } else if (pg > 0) {
-                            badgeStatus = `<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded font-bold">Pago: ${formatarMoeda(pg)}</span>`;
+                            badgeStatus = `<span class="bg-yellow-100 text-yellow-800 text-[10px] px-2 py-1 rounded font-bold">Pago: ${formatarMoeda(pg)}</span>`;
                         } else {
-                            badgeStatus = `<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-bold">Pendente</span>`;
+                            badgeStatus = `<span class="bg-red-100 text-red-800 text-[10px] px-2 py-1 rounded font-bold">Pendente</span>`;
                         }
 
                         const listaItens = (v.itens_venda || []).map(iv => {
                             const nome = iv.produto ? iv.produto.nome : 'Deletado';
-                            return `<span class="inline-block bg-gray-100 text-gray-700 border border-gray-200 rounded px-2 py-1 text-xs font-semibold mr-2 mb-1">${iv.qtd}x ${nome}</span>`;
+                            return `<span class="inline-block bg-gray-100 text-gray-700 border border-gray-200 rounded px-2 py-1 text-xs font-semibold mr-1 mb-1">${iv.qtd}x ${nome}</span>`;
                         }).join('');
 
                         conteudoHTML += `
                             <div class="p-4 hover:bg-gray-50 transition flex flex-col md:flex-row justify-between md:items-center">
                                 <div>
-                                    <h4 class="font-bold text-gray-900 text-lg">${v.colaborador} ${badgeStatus}</h4>
+                                    <h4 class="font-bold text-gray-900 text-base md:text-lg">${v.colaborador} <span class="ml-2 align-middle">${badgeStatus}</span></h4>
                                     <div class="mt-2">${listaItens}</div>
-                                    ${v.observacao ? `<p class="text-xs text-gray-500 mt-2 bg-yellow-50 inline-block px-2 py-1 rounded border border-yellow-100"><i class="fa-solid fa-note-sticky text-yellow-600 mr-1"></i> ${v.observacao}</p>` : ''}
+                                    ${v.observacao ? `<p class="text-xs text-gray-500 mt-2 bg-yellow-50 inline-block px-2 py-1 rounded border border-yellow-100 break-words"><i class="fa-solid fa-note-sticky text-yellow-600 mr-1"></i> ${v.observacao}</p>` : ''}
                                 </div>
-                                <div class="mt-3 md:mt-0 text-right flex md:flex-col justify-between items-center md:items-end shrink-0">
-                                    <span class="font-bold text-xl text-gray-900">${formatarMoeda(dev)}</span>
-                                    <button onclick="abrirModalVenda(${v.id})" class="text-blue-600 hover:underline text-sm font-medium mt-1"><i class="fa-solid fa-pen mr-1"></i> Editar</button>
+                                <div class="mt-3 md:mt-0 text-right flex flex-row md:flex-col justify-between items-center md:items-end shrink-0 border-t md:border-t-0 pt-3 md:pt-0">
+                                    <span class="font-bold text-lg md:text-xl text-gray-900">${formatarMoeda(dev)}</span>
+                                    <button onclick="abrirModalVenda(${v.id})" class="text-blue-600 hover:underline text-sm font-medium p-2 md:p-0 md:mt-1"><i class="fa-solid fa-pen mr-1"></i> Editar</button>
                                 </div>
                             </div>
                         `;
@@ -495,15 +548,16 @@
                     conteudoHTML += `</div>`;
                 }
 
+                // O GRANDE TRUQUE RESPONSIVO: Dia da semana muda a posição no mobile
                 container.innerHTML += `
-                    <div class="flex bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-                        <div class="bg-gray-900 w-12 flex items-center justify-center relative shrink-0">
-                            <span class="text-xs font-bold text-white uppercase tracking-widest vertical-text absolute whitespace-nowrap">${diasUteis[i]}</span>
+                    <div class="flex flex-col md:flex-row bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+                        <div class="bg-gray-900 w-full md:w-12 py-1.5 md:py-0 flex items-center justify-center relative shrink-0">
+                            <span class="text-[10px] md:text-xs font-bold text-white uppercase tracking-widest md:vertical-text md:absolute whitespace-nowrap">${diasUteis[i]}</span>
                         </div>
                         <div class="flex-1 flex flex-col min-w-0">
                             <div class="bg-gray-50 border-b border-gray-200 px-4 py-2 flex justify-between items-center">
-                                <span class="text-sm font-semibold text-gray-500">${formatarData(isoDia)}</span>
-                                <button onclick="abrirModalVenda(null, '${isoDia}')" class="text-xs bg-gray-900 text-white px-2 py-1 rounded font-bold hover:bg-gray-800 transition">+ Registrar</button>
+                                <span class="text-xs md:text-sm font-semibold text-gray-500">${formatarData(isoDia)}</span>
+                                <button onclick="abrirModalVenda(null, '${isoDia}')" class="text-[10px] md:text-xs bg-gray-900 text-white px-2 py-1 md:py-1 rounded font-bold hover:bg-gray-800 transition">+ Registrar</button>
                             </div>
                             <div class="flex-1">${conteudoHTML}</div>
                         </div>
@@ -548,11 +602,11 @@
             const options = bancoProdutos.map(p => `<option value="${p.id}" data-preco="${p.preco}" ${p.id == idProduto ? 'selected' : ''}>${p.nome} (${formatarMoeda(p.preco)}) [Disp: ${p.qtd}]</option>`).join('');
 
             div.innerHTML = `
-                <select class="flex-1 border rounded p-2 text-sm focus:ring-2 focus:ring-gray-900 outline-none select-prod" onchange="calcularTotalVendaModal()" required>
-                    <option value="">Selecione o produto...</option>
+                <select class="flex-1 border rounded p-2 text-xs md:text-sm focus:ring-2 focus:ring-gray-900 outline-none select-prod truncate w-24" onchange="calcularTotalVendaModal()" required>
+                    <option value="">Produto...</option>
                     ${options}
                 </select>
-                <input type="number" class="w-20 border rounded p-2 text-sm text-center focus:ring-2 focus:ring-gray-900 outline-none input-qtd" value="${qtd}" min="1" required onchange="calcularTotalVendaModal()">
+                <input type="number" class="w-16 md:w-20 border rounded p-2 text-xs md:text-sm text-center focus:ring-2 focus:ring-gray-900 outline-none input-qtd" value="${qtd}" min="1" required onchange="calcularTotalVendaModal()">
                 <button type="button" onclick="this.parentElement.remove(); calcularTotalVendaModal();" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="fa-solid fa-trash"></i></button>
             `;
             container.appendChild(div);
@@ -593,13 +647,11 @@
                 let itensFinais = [...itensNaTela];
                 let valPagoMerge = valorPagoInp ? parseFloat(valorPagoInp) : null;
 
-                // LÓGICA DE ACÚMULO AUTOMÁTICO PARA A MESMA PESSOA NO MESMO DIA (Se for cadastro novo)
                 if (!idForm) {
                     const existente = bancoVendas.find(v => v.colaborador.toLowerCase() === colab.toLowerCase() && v.data_venda === dataV);
                     if (existente) {
                         idFinal = existente.id;
                         
-                        // Devolve estoque antigo
                         if(existente.itens_venda) {
                             for(const iv of existente.itens_venda) {
                                 await supabaseClient.rpc('increment_product_qty', { prod_id: iv.produto_id, qty_to_add: iv.qtd });
@@ -607,7 +659,6 @@
                         }
                         await supabaseClient.from('itens_venda').delete().eq('venda_id', idFinal);
 
-                        // Mescla itens na memória
                         const mapa = {};
                         existente.itens_venda.forEach(i => { mapa[i.produto_id] = { ...i }; });
                         itensNaTela.forEach(i => {
@@ -616,7 +667,6 @@
                         });
                         itensFinais = Object.values(mapa);
 
-                        // Mescla obs e valor pago anterior (se o usuário não preencheu o valor manual na tela)
                         if (existente.observacao && obs) obs = existente.observacao + " | " + obs;
                         else if (existente.observacao) obs = existente.observacao;
 
@@ -625,7 +675,6 @@
                         }
                     }
                 } else {
-                    // Edição Comum: Devolve Estoque Antigo
                     const vAntiga = bancoVendas.find(v => v.id == idForm);
                     if(vAntiga && vAntiga.itens_venda) {
                         for(const iv of vAntiga.itens_venda) {
@@ -637,26 +686,20 @@
 
                 const totalFinal = itensFinais.reduce((acc, i) => acc + (i.qtd * i.preco_unitario), 0);
                 
-                // Define valor pago real e Status dinâmico
                 if (valPagoMerge === null) valPagoMerge = statusBase.includes('PAGO') ? totalFinal : 0;
                 
                 let statusFinal = statusBase;
                 if (valPagoMerge >= totalFinal) statusFinal = statusBase.includes('PAGO') ? statusBase : 'PAGO - PIX';
                 else statusFinal = 'À PAGAR';
 
-                const dadosVenda = { 
-                    colaborador: colab, data_venda: dataV, status: statusFinal, 
-                    observacao: obs, total_devido: totalFinal, valor_pago: valPagoMerge 
-                };
+                const dadosVenda = { colaborador: colab, data_venda: dataV, status: statusFinal, observacao: obs, total_devido: totalFinal, valor_pago: valPagoMerge };
 
-                // Abate estoque
                 for(const it of itensFinais) {
                     await supabaseClient.rpc('decrement_product_qty', { prod_id: it.produto_id, qty_to_remove: it.qtd });
                 }
 
-                if(idFinal) {
-                    await supabaseClient.from('vendas').update(dadosVenda).eq('id', idFinal);
-                } else {
+                if(idFinal) await supabaseClient.from('vendas').update(dadosVenda).eq('id', idFinal);
+                else {
                     const { data: nVenda } = await supabaseClient.from('vendas').insert([dadosVenda]).select();
                     idFinal = nVenda[0].id;
                 }
@@ -664,7 +707,7 @@
                 const insertsItens = itensFinais.map(i => ({ venda_id: idFinal, produto_id: i.produto_id, qtd: i.qtd, preco_unitario: i.preco_unitario }));
                 await supabaseClient.from('itens_venda').insert(insertsItens);
 
-                alertaSucesso('Venda registrada com sucesso!');
+                alertaSucesso('Registrado!');
                 fecharModal('modalVenda');
                 await sincronizarBanco();
 
@@ -719,13 +762,13 @@
             if(arrayRelatorio.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-400">Sem dados.</td></tr>`;
 
             tbody.innerHTML = arrayRelatorio.map(r => `
-                <tr class="hover:bg-gray-50 border-b">
-                    <td class="p-4 font-bold text-gray-900">${r.nome}</td>
-                    <td class="p-4 font-bold text-green-600">${formatarMoeda(r.pago)}</td>
-                    <td class="p-4 font-bold ${r.pendente > 0 ? 'text-red-600' : 'text-gray-400'}">${formatarMoeda(r.pendente)}</td>
-                    <td class="p-4 font-bold text-blue-600">${formatarMoeda(r.total)}</td>
-                    <td class="p-4 text-center">
-                        ${r.pendente > 0 ? `<button onclick="abrirModalPagamento('${r.nome}', ${r.pendente})" class="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-bold hover:bg-green-200"><i class="fa-solid fa-money-bill-wave mr-1"></i> Abater Dívida</button>` : `<span class="text-xs text-gray-400 font-bold"><i class="fa-solid fa-check mr-1"></i>Tudo Certo</span>`}
+                <tr class="hover:bg-gray-50 border-b border-gray-100">
+                    <td class="p-4 font-bold text-gray-900 text-sm whitespace-nowrap">${r.nome}</td>
+                    <td class="p-4 font-bold text-green-600 text-sm">${formatarMoeda(r.pago)}</td>
+                    <td class="p-4 font-bold ${r.pendente > 0 ? 'text-red-600' : 'text-gray-400'} text-sm">${formatarMoeda(r.pendente)}</td>
+                    <td class="p-4 font-bold text-blue-600 text-sm">${formatarMoeda(r.total)}</td>
+                    <td class="p-4 text-center whitespace-nowrap">
+                        ${r.pendente > 0 ? `<button onclick="abrirModalPagamento('${r.nome}', ${r.pendente})" class="bg-green-100 text-green-700 px-3 py-2 md:py-1 rounded text-xs font-bold hover:bg-green-200"><i class="fa-solid fa-money-bill-wave mr-1"></i> Receber</button>` : `<span class="text-xs text-gray-400 font-bold"><i class="fa-solid fa-check mr-1"></i>Tudo Certo</span>`}
                     </td>
                 </tr>
             `).join('');
@@ -743,11 +786,10 @@
             let pagamentoRestante = parseFloat(document.getElementById('pagValorInp').value);
             const metodo = document.getElementById('pagMetodoInp').value;
 
-            if(!pagamentoRestante || pagamentoRestante <= 0) return alertaErro('Insira um valor válido para abater.');
+            if(!pagamentoRestante || pagamentoRestante <= 0) return alertaErro('Valor inválido.');
 
             toggleLoading(true);
             try {
-                // Pega as vendas da pessoa que ainda tem saldo devedor, da mais antiga pra mais nova
                 let vendasPendentes = bancoVendas
                     .filter(v => v.colaborador === colab && (parseFloat(v.total_devido) - parseFloat(v.valor_pago || 0)) > 0)
                     .sort((a,b) => new Date(a.data_venda) - new Date(b.data_venda));
@@ -755,26 +797,24 @@
                 for (let v of vendasPendentes) {
                     if (pagamentoRestante <= 0) break;
 
-                    let faltaNestaVenda = parseFloat(v.total_devido) - parseFloat(v.valor_pago || 0);
-                    let abaterAgora = Math.min(faltaNestaVenda, pagamentoRestante);
+                    let falta = parseFloat(v.total_devido) - parseFloat(v.valor_pago || 0);
+                    let abater = Math.min(falta, pagamentoRestante);
                     
-                    let novoValorPago = parseFloat(v.valor_pago || 0) + abaterAgora;
-                    let novoStatus = (novoValorPago >= parseFloat(v.total_devido)) ? `PAGO - ${metodo}` : 'À PAGAR';
+                    let novoPago = parseFloat(v.valor_pago || 0) + abater;
+                    let novoStatus = (novoPago >= parseFloat(v.total_devido)) ? `PAGO - ${metodo}` : 'À PAGAR';
 
-                    await supabaseClient.from('vendas').update({ valor_pago: novoValorPago, status: novoStatus }).eq('id', v.id);
-
-                    pagamentoRestante -= abaterAgora;
+                    await supabaseClient.from('vendas').update({ valor_pago: novoPago, status: novoStatus }).eq('id', v.id);
+                    pagamentoRestante -= abater;
                 }
 
-                alertaSucesso('Pagamento registrado e dívidas abatidas!');
+                alertaSucesso('Pagamento processado!');
                 fecharModal('modalPagamento');
                 await sincronizarBanco();
 
-            } catch (e) { alertaErro('Erro ao salvar o pagamento.'); console.error(e); }
+            } catch (e) { alertaErro('Erro de pagamento.'); console.error(e); }
             toggleLoading(false);
         }
 
-        // START
         window.onload = () => sincronizarBanco();
 
     </script>
