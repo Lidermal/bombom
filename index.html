@@ -14,15 +14,7 @@
     <style>
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Texto vertical para os dias da semana */
-        .vertical-text { 
-            writing-mode: vertical-rl; 
-            text-orientation: mixed;
-            transform: rotate(180deg); 
-        }
-        
-        /* Scrollbar customizada */
+        .vertical-text { writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -40,7 +32,7 @@
         <div class="p-6 border-b border-gray-800 flex items-center space-x-3">
             <span class="text-3xl">🍫</span>
             <div>
-                <h1 class="text-xl font-bold tracking-wide">Controle TI</h1>
+                <h1 class="text-xl font-bold tracking-wide">Bombons Adriel & Ceci</h1>
                 <p class="text-xs text-gray-400">Consumo & Estoque</p>
             </div>
         </div>
@@ -96,13 +88,13 @@
             </section>
 
             <section id="aba-semanal" class="aba-conteudo hidden space-y-6 fade-in">
-                <div class="flex justify-end">
-                    <button onclick="abrirModalVenda()" class="bg-gray-900 text-white px-5 py-2.5 rounded-lg hover:bg-gray-800 transition shadow flex items-center font-medium">
-                        <i class="fa-solid fa-plus mr-2"></i> Registrar Venda
+                <div class="flex justify-between items-center bg-blue-50 border border-blue-100 p-3 rounded-lg">
+                    <p class="text-sm text-blue-800 font-medium"><i class="fa-solid fa-circle-info mr-2"></i>Se você registrar uma nova venda para a mesma pessoa no mesmo dia, o sistema somará os produtos automaticamente.</p>
+                    <button onclick="abrirModalVenda()" class="bg-gray-900 text-white px-5 py-2 rounded-lg hover:bg-gray-800 transition shadow shrink-0 font-medium">
+                        <i class="fa-solid fa-plus mr-1"></i> Registrar Venda
                     </button>
                 </div>
-                <div id="containerDiasSemana" class="space-y-6">
-                    </div>
+                <div id="containerDiasSemana" class="space-y-6"></div>
             </section>
 
             <section id="aba-estoque" class="aba-conteudo hidden space-y-6 fade-in">
@@ -121,8 +113,7 @@
                                 <th class="p-4 text-sm font-semibold text-gray-600 text-center">Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="tabelaEstoque" class="divide-y divide-gray-100">
-                        </tbody>
+                        <tbody id="tabelaEstoque" class="divide-y divide-gray-100"></tbody>
                     </table>
                 </div>
             </section>
@@ -136,16 +127,44 @@
                                 <th class="p-4 text-sm font-semibold text-green-600">Total Pago</th>
                                 <th class="p-4 text-sm font-semibold text-red-600">Total Pendente</th>
                                 <th class="p-4 text-sm font-semibold text-blue-600">Total Acumulado</th>
+                                <th class="p-4 text-sm font-semibold text-gray-600 text-center">Ação</th>
                             </tr>
                         </thead>
-                        <tbody id="tabelaFinanceiro" class="divide-y divide-gray-100">
-                        </tbody>
+                        <tbody id="tabelaFinanceiro" class="divide-y divide-gray-100"></tbody>
                     </table>
                 </div>
             </section>
 
         </div>
     </main>
+
+    <div id="modalPagamento" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden">
+            <div class="bg-gray-50 p-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-lg text-gray-800">Receber Pagamento</h3>
+                <button onclick="fecharModal('modalPagamento')" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="text-center mb-4">
+                    <p class="text-gray-500 text-sm">Colaborador</p>
+                    <h4 class="text-xl font-bold text-gray-900" id="pagColabNome">Nome</h4>
+                    <p class="text-sm mt-1">Dívida Total: <span class="font-bold text-red-600" id="pagFaltaView">R$ 0,00</span></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Valor que está sendo pago agora</label>
+                    <input type="number" id="pagValorInp" required min="0.01" step="0.01" class="w-full border rounded-lg p-2 text-center text-xl font-bold text-green-700 focus:ring-2 focus:ring-gray-900 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Método de Pagamento</label>
+                    <select id="pagMetodoInp" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none">
+                        <option value="PIX">PIX</option>
+                        <option value="ESPÉCIE">ESPÉCIE</option>
+                    </select>
+                </div>
+                <button onclick="processarPagamento()" class="w-full mt-2 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 shadow">Abater Dívida</button>
+            </div>
+        </div>
+    </div>
 
     <div id="modalProduto" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm p-4">
         <div class="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden">
@@ -159,21 +178,20 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Produto</label>
                     <input type="text" id="prodNome" required list="listaProdutos" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none" placeholder="Ex: Cone Trufado">
                     <datalist id="listaProdutos"></datalist>
-                    <p class="text-xs text-blue-600 mt-1 font-medium"><i class="fa-solid fa-circle-info"></i> Se o nome já existir, a quantidade será somada.</p>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Quantidade a Adicionar</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
                         <input type="number" id="prodQtd" required min="0" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none" value="1">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Preço Atualizado (R$)</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Preço Atual (R$)</label>
                         <input type="number" id="prodPreco" required min="0" step="0.01" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none" placeholder="2.50">
                     </div>
                 </div>
                 <div class="pt-4 flex justify-end space-x-3 border-t mt-6">
                     <button type="button" onclick="fecharModal('modalProduto')" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 font-medium">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium">Salvar no Estoque</button>
+                    <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium">Salvar Estoque</button>
                 </div>
             </form>
         </div>
@@ -187,18 +205,18 @@
             </div>
             <form onsubmit="salvarVenda(event)" class="p-6 flex-1 overflow-y-auto space-y-4">
                 <input type="hidden" id="vendaId">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Data</label>
                         <input type="date" id="vendaData" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none">
                     </div>
-                    <div>
+                    <div class="col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Colaborador</label>
                         <input type="text" id="vendaColab" required list="listaColab" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none">
                         <datalist id="listaColab"></datalist>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Status Pagamento</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status Base</label>
                         <select id="vendaStatus" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none font-medium text-gray-700">
                             <option value="PAGO - PIX">PAGO - PIX</option>
                             <option value="PAGO - ESPÉCIE">PAGO - ESPÉCIE</option>
@@ -206,9 +224,15 @@
                         </select>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Observação <span class="text-xs text-gray-400 font-normal">(opcional)</span></label>
-                    <input type="text" id="vendaObs" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none" placeholder="Ex: Faltou R$ 1,00">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Valor Já Recebido (R$) <span class="text-xs text-gray-400">Opcional</span></label>
+                        <input type="number" id="vendaValorPago" step="0.01" min="0" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none text-green-700 font-bold" placeholder="Auto">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Observação <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
+                        <input type="text" id="vendaObs" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-gray-900 outline-none" placeholder="Ex: Faltou R$ 1,00">
+                    </div>
                 </div>
                 
                 <div class="mt-6 border border-gray-200 rounded-lg p-4 bg-gray-50">
@@ -216,12 +240,11 @@
                         <h4 class="font-bold text-gray-700"><i class="fa-solid fa-cart-shopping mr-2"></i>Itens Consumidos</h4>
                         <button type="button" onclick="adicionarLinhaProduto()" class="text-sm bg-white border border-gray-300 px-3 py-1.5 rounded text-gray-700 font-medium hover:bg-gray-100">+ Add Produto</button>
                     </div>
-                    <div id="containerItensVenda" class="space-y-3">
-                        </div>
+                    <div id="containerItensVenda" class="space-y-3"></div>
                 </div>
             </form>
             <div class="p-4 border-t bg-gray-50 flex justify-between items-center shrink-0 rounded-b-xl">
-                <div class="text-gray-800 font-medium">Total: <span id="vendaTotalView" class="text-2xl font-bold text-green-600 ml-2">R$ 0,00</span></div>
+                <div class="text-gray-800 font-medium">Total Calculado: <span id="vendaTotalView" class="text-2xl font-bold text-gray-900 ml-2">R$ 0,00</span></div>
                 <div class="flex space-x-3">
                     <button type="button" onclick="fecharModal('modalVenda')" class="px-5 py-2 border rounded-lg text-gray-600 hover:bg-gray-100 font-medium bg-white">Cancelar</button>
                     <button type="button" onclick="document.querySelector('#modalVenda form').requestSubmit()" class="px-5 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium shadow">Confirmar e Salvar</button>
@@ -231,39 +254,26 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO DA API (Variável com nome seguro: supabaseClient)
+        // API SUPABASE
         const SUPABASE_URL = 'https://jyjrzczpuyomatskebfk.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5anJ6Y3pwdXlvbWF0c2tlYmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDExMDcsImV4cCI6MjA5NzM3NzEwN30.texrp9Ayt6rzmQyCYDS1UgJiKm6yUm4-PFq4lIj47hE';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // VARIÁVEIS DE ESTADO
         let bancoProdutos = [];
         let bancoVendas = [];
 
-        // FUNÇÕES UTILITÁRIAS
         const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
-        const formatarData = (dataStr) => {
-            if(!dataStr) return '';
-            const [y,m,d] = dataStr.split('-');
-            return `${d}/${m}/${y}`;
-        };
+        const formatarData = (dataStr) => { if(!dataStr) return ''; const [y,m,d] = dataStr.split('-'); return `${d}/${m}/${y}`; };
         const toggleLoading = (show) => document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
         const fecharModal = (id) => document.getElementById(id).classList.add('hidden');
+        const alertaSucesso = (msg) => Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: msg, showConfirmButton: false, timer: 3000 });
+        const alertaErro = (msg) => Swal.fire({ icon: 'error', title: 'Atenção', text: msg, confirmButtonColor: '#1f2937' });
 
-        // ALERTAS (SWEETALERT2)
-        const alertaSucesso = (msg) => Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: msg, showConfirmButton: false, timer: 2500 });
-        const alertaErro = (msg) => Swal.fire({ icon: 'error', title: 'Oops...', text: msg, confirmButtonColor: '#1f2937' });
-
-        // NAVEGAÇÃO SEGURA (MENU LATERAL)
+        // NAVEGAÇÃO
         function mudarAba(abaId, elementoBotao = null) {
-            // Oculta tudo
             document.querySelectorAll('.aba-conteudo').forEach(aba => aba.classList.add('hidden'));
-            document.querySelectorAll('.menu-btn').forEach(btn => {
-                btn.classList.remove('bg-gray-800', 'text-white', 'border-l-4', 'border-white');
-                btn.classList.add('text-gray-300');
-            });
-
-            // Mostra o que foi clicado
+            document.querySelectorAll('.menu-btn').forEach(btn => { btn.classList.remove('bg-gray-800', 'text-white', 'border-l-4', 'border-white'); btn.classList.add('text-gray-300'); });
+            
             const abaTarget = document.getElementById(`aba-${abaId}`);
             if(abaTarget) abaTarget.classList.remove('hidden');
 
@@ -272,51 +282,35 @@
                 elementoBotao.classList.add('bg-gray-800', 'text-white', 'border-l-4', 'border-white');
             }
 
-            // Atualiza Header
             const titulos = { 'dashboard': 'Dashboard', 'semanal': 'Controle Semanal', 'estoque': 'Estoque', 'financeiro': 'Financeiro' };
             document.getElementById('tituloAba').innerText = titulos[abaId] || 'Controle';
             document.getElementById('containerFiltroSemana').classList.toggle('hidden', abaId !== 'semanal');
 
-            // Renderiza dados conforme a aba
             if(abaId === 'dashboard') renderizarDashboard();
             if(abaId === 'semanal') carregarVisaoSemanal();
             if(abaId === 'estoque') renderizarEstoque();
             if(abaId === 'financeiro') renderizarFinanceiro();
         }
 
-        // SINCRONIZAÇÃO COM SUPABASE
+        // CARREGAR BANCO DE DADOS
         async function sincronizarBanco() {
             toggleLoading(true);
             try {
-                // Busca Produtos
-                const { data: pData, error: pErr } = await supabaseClient.from('produtos').select('*').order('nome');
-                if(pErr) throw pErr;
+                const { data: pData } = await supabaseClient.from('produtos').select('*').order('nome');
                 bancoProdutos = pData || [];
 
-                // Busca Vendas
-                const { data: vData, error: vErr } = await supabaseClient
-                    .from('vendas')
-                    .select('*, itens_venda(*, produto:produtos(nome))')
-                    .order('data_venda', { ascending: false });
-                if(vErr) throw vErr;
+                const { data: vData } = await supabaseClient.from('vendas').select('*, itens_venda(*, produto:produtos(nome))').order('data_venda', { ascending: false });
                 bancoVendas = vData || [];
 
                 atualizarDatalists();
                 construirFiltroSemanas();
                 
                 const abaAtiva = document.querySelector('.aba-conteudo:not(.hidden)');
-                if(abaAtiva) {
-                    mudarAba(abaAtiva.id.replace('aba-', ''));
-                } else {
-                    mudarAba('dashboard', document.querySelector('.menu-btn'));
-                }
+                if(abaAtiva) mudarAba(abaAtiva.id.replace('aba-', ''));
+                else mudarAba('dashboard', document.querySelector('.menu-btn'));
 
-            } catch (err) {
-                alertaErro('Falha na comunicação com o banco de dados.');
-                console.error(err);
-            } finally {
-                toggleLoading(false);
-            }
+            } catch (err) { alertaErro('Falha na comunicação com o banco.'); console.error(err); }
+            toggleLoading(false);
         }
 
         function atualizarDatalists() {
@@ -330,26 +324,23 @@
         // ==========================================
         function renderizarEstoque() {
             const tbody = document.getElementById('tabelaEstoque');
-            if(bancoProdutos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400">Nenhum produto no estoque.</td></tr>`;
-                return;
-            }
+            if(bancoProdutos.length === 0) return tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400">Vazio.</td></tr>`;
+            
             tbody.innerHTML = bancoProdutos.map(p => `
                 <tr class="hover:bg-gray-50 transition">
                     <td class="p-4 font-bold text-gray-800">${p.nome}</td>
                     <td class="p-4"><span class="px-2 py-1 rounded text-sm font-bold ${p.qtd <= 3 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${p.qtd} un</span></td>
                     <td class="p-4 text-gray-600">${formatarMoeda(p.preco)}</td>
                     <td class="p-4 text-center">
-                        <button onclick="editarProduto(${p.id})" class="text-blue-600 hover:text-blue-800 mx-2 font-medium" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deletarProduto(${p.id})" class="text-red-500 hover:text-red-700 mx-2 font-medium" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="editarProduto(${p.id})" class="text-blue-600 hover:text-blue-800 mx-2" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deletarProduto(${p.id})" class="text-red-500 hover:text-red-700 mx-2" title="Excluir"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
             `).join('');
         }
 
         function abrirModalProduto(prod = null) {
-            const form = document.querySelector('#modalProduto form');
-            form.reset();
+            document.querySelector('#modalProduto form').reset();
             if(prod) {
                 document.getElementById('tituloModalProduto').innerText = 'Editar Produto';
                 document.getElementById('prodId').value = prod.id;
@@ -357,29 +348,23 @@
                 document.getElementById('prodQtd').value = prod.qtd;
                 document.getElementById('prodPreco').value = prod.preco;
             } else {
-                document.getElementById('tituloModalProduto').innerText = 'Novo Produto (Adicionar ao Estoque)';
+                document.getElementById('tituloModalProduto').innerText = 'Novo Produto';
                 document.getElementById('prodId').value = '';
                 document.getElementById('prodQtd').value = 1;
             }
             document.getElementById('modalProduto').classList.remove('hidden');
         }
 
-        function editarProduto(id) {
-            const p = bancoProdutos.find(x => x.id === id);
-            if(p) abrirModalProduto(p);
-        }
+        function editarProduto(id) { const p = bancoProdutos.find(x => x.id === id); if(p) abrirModalProduto(p); }
 
         async function deletarProduto(id) {
-            const result = await Swal.fire({ title: 'Remover produto?', text: 'Ele será apagado do estoque.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#6b7280', confirmButtonText: 'Sim, excluir', cancelButtonText: 'Cancelar' });
+            const result = await Swal.fire({ title: 'Remover produto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Sim, excluir' });
             if (result.isConfirmed) {
                 toggleLoading(true);
                 try {
                     await supabaseClient.from('produtos').delete().eq('id', id);
-                    alertaSucesso('Produto excluído.');
                     await sincronizarBanco();
-                } catch(e) {
-                    alertaErro('Não é possível apagar um produto que já está vinculado a uma venda antiga.');
-                }
+                } catch(e) { alertaErro('Produto vinculado a uma venda antiga.'); }
                 toggleLoading(false);
             }
         }
@@ -393,21 +378,19 @@
 
             toggleLoading(true);
             try {
-                // VERIFICA SE JÁ EXISTE O NOME
-                const produtoExistente = bancoProdutos.find(p => p.nome.toLowerCase() === nome.toLowerCase() && p.id != id);
+                const existente = bancoProdutos.find(p => p.nome.toLowerCase() === nome.toLowerCase() && p.id != id);
 
-                if (produtoExistente) {
-                    const qtdFinal = produtoExistente.qtd + qtdAdicional;
-                    await supabaseClient.from('produtos').update({ qtd: qtdFinal, preco: preco }).eq('id', produtoExistente.id);
-                    alertaSucesso(`Quantidade somada! Agora temos ${qtdFinal} de ${nome}.`);
+                if (existente) {
+                    const qtdFinal = existente.qtd + qtdAdicional;
+                    await supabaseClient.from('produtos').update({ qtd: qtdFinal, preco: preco }).eq('id', existente.id);
+                    alertaSucesso(`Somado! Agora temos ${qtdFinal} de ${nome}.`);
                 } else if (id) {
                     await supabaseClient.from('produtos').update({ nome, qtd: qtdAdicional, preco }).eq('id', id);
-                    alertaSucesso('Produto atualizado!');
+                    alertaSucesso('Atualizado!');
                 } else {
                     await supabaseClient.from('produtos').insert([{ nome, qtd: qtdAdicional, preco }]);
-                    alertaSucesso('Novo produto adicionado ao estoque!');
+                    alertaSucesso('Adicionado!');
                 }
-                
                 fecharModal('modalProduto');
                 await sincronizarBanco();
             } catch(err) { alertaErro('Erro ao salvar produto.'); }
@@ -415,43 +398,35 @@
         }
 
         // ==========================================
-        // VENDAS (CONTROLE SEMANAL COM LATERAL)
+        // VENDAS (CONTROLE SEMANAL & ACÚMULO)
         // ==========================================
         function obterInicioSemana(data) {
-            const d = new Date(data);
-            d.setHours(0,0,0,0);
-            const diaDaSemana = d.getDay();
-            const diferenca = d.getDate() - diaDaSemana + (diaDaSemana === 0 ? -6 : 1);
-            return new Date(d.setDate(diferenca));
+            const d = new Date(data); d.setHours(0,0,0,0);
+            const ds = d.getDay();
+            return new Date(d.setDate(d.getDate() - ds + (ds === 0 ? -6 : 1)));
         }
 
         function construirFiltroSemanas() {
             const select = document.getElementById('filtroSemana');
             select.innerHTML = '';
-            const conjuntoSemanas = new Set();
+            const setSemanas = new Set();
             
-            const semanaAtualIso = obterInicioSemana(new Date()).toISOString().split('T')[0];
-            conjuntoSemanas.add(semanaAtualIso);
+            const atualIso = obterInicioSemana(new Date()).toISOString().split('T')[0];
+            setSemanas.add(atualIso);
 
             bancoVendas.forEach(v => {
-                if(v.data_venda) {
-                    const dv = new Date(v.data_venda + 'T12:00:00'); 
-                    conjuntoSemanas.add(obterInicioSemana(dv).toISOString().split('T')[0]);
-                }
+                if(v.data_venda) setSemanas.add(obterInicioSemana(new Date(v.data_venda + 'T12:00:00')).toISOString().split('T')[0]);
             });
 
-            const arraySemanas = Array.from(conjuntoSemanas).sort((a,b) => new Date(b) - new Date(a));
-
-            arraySemanas.forEach(isoStr => {
+            Array.from(setSemanas).sort((a,b) => new Date(b) - new Date(a)).forEach(isoStr => {
                 const [y, m, d] = isoStr.split('-');
                 const start = new Date(y, m - 1, d);
-                const end = new Date(start);
-                end.setDate(end.getDate() + 6);
+                const end = new Date(start); end.setDate(end.getDate() + 6);
 
                 const label = `${start.toLocaleDateString('pt-BR')} até ${end.toLocaleDateString('pt-BR')}`;
                 const option = document.createElement('option');
                 option.value = isoStr;
-                option.innerText = isoStr === semanaAtualIso ? `${label} (Atual)` : label;
+                option.innerText = isoStr === atualIso ? `${label} (Atual)` : label;
                 select.appendChild(option);
             });
         }
@@ -462,9 +437,7 @@
 
             const [y, m, d] = isoStr.split('-');
             const semanaStart = new Date(y, m - 1, d, 0,0,0);
-            const semanaEnd = new Date(semanaStart);
-            semanaEnd.setDate(semanaEnd.getDate() + 6);
-            semanaEnd.setHours(23,59,59);
+            const semanaEnd = new Date(semanaStart); semanaEnd.setDate(semanaEnd.getDate() + 6); semanaEnd.setHours(23,59,59);
 
             const vendasDaSemana = bancoVendas.filter(v => {
                 const vd = new Date(v.data_venda + 'T12:00:00');
@@ -476,25 +449,32 @@
             container.innerHTML = '';
 
             for(let i=0; i<5; i++) {
-                const diaAtual = new Date(semanaStart);
-                diaAtual.setDate(diaAtual.getDate() + i);
+                const diaAtual = new Date(semanaStart); diaAtual.setDate(diaAtual.getDate() + i);
                 const isoDia = diaAtual.toISOString().split('T')[0];
 
                 const vendasDoDia = vendasDaSemana.filter(v => v.data_venda === isoDia);
-                
                 let conteudoHTML = '';
+                
                 if(vendasDoDia.length === 0) {
                     conteudoHTML = `<p class="p-6 text-center text-gray-400 italic">Sem registros neste dia.</p>`;
                 } else {
                     conteudoHTML = `<div class="divide-y divide-gray-100">`;
                     vendasDoDia.forEach(v => {
+                        const dev = parseFloat(v.total_devido);
+                        const pg = parseFloat(v.valor_pago || 0);
+                        
                         let badgeStatus = '';
-                        if(v.status.includes('PIX')) badgeStatus = `<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-bold">PIX</span>`;
-                        else if(v.status.includes('ESPÉCIE')) badgeStatus = `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">$$ Espécie</span>`;
-                        else badgeStatus = `<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-bold">Pendente</span>`;
+                        if (pg >= dev) {
+                            if(v.status.includes('ESPÉCIE')) badgeStatus = `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">$$ Espécie</span>`;
+                            else badgeStatus = `<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-bold">PIX</span>`;
+                        } else if (pg > 0) {
+                            badgeStatus = `<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded font-bold">Pago: ${formatarMoeda(pg)}</span>`;
+                        } else {
+                            badgeStatus = `<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-bold">Pendente</span>`;
+                        }
 
                         const listaItens = (v.itens_venda || []).map(iv => {
-                            const nome = iv.produto ? iv.produto.nome : 'Produto Deletado';
+                            const nome = iv.produto ? iv.produto.nome : 'Deletado';
                             return `<span class="inline-block bg-gray-100 text-gray-700 border border-gray-200 rounded px-2 py-1 text-xs font-semibold mr-2 mb-1">${iv.qtd}x ${nome}</span>`;
                         }).join('');
 
@@ -506,7 +486,7 @@
                                     ${v.observacao ? `<p class="text-xs text-gray-500 mt-2 bg-yellow-50 inline-block px-2 py-1 rounded border border-yellow-100"><i class="fa-solid fa-note-sticky text-yellow-600 mr-1"></i> ${v.observacao}</p>` : ''}
                                 </div>
                                 <div class="mt-3 md:mt-0 text-right flex md:flex-col justify-between items-center md:items-end shrink-0">
-                                    <span class="font-bold text-xl text-green-600">${formatarMoeda(v.total_devido)}</span>
+                                    <span class="font-bold text-xl text-gray-900">${formatarMoeda(dev)}</span>
                                     <button onclick="abrirModalVenda(${v.id})" class="text-blue-600 hover:underline text-sm font-medium mt-1"><i class="fa-solid fa-pen mr-1"></i> Editar</button>
                                 </div>
                             </div>
@@ -515,7 +495,6 @@
                     conteudoHTML += `</div>`;
                 }
 
-                // LAYOUT COM LATERAL VERTICAL ESCURA
                 container.innerHTML += `
                     <div class="flex bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
                         <div class="bg-gray-900 w-12 flex items-center justify-center relative shrink-0">
@@ -526,18 +505,13 @@
                                 <span class="text-sm font-semibold text-gray-500">${formatarData(isoDia)}</span>
                                 <button onclick="abrirModalVenda(null, '${isoDia}')" class="text-xs bg-gray-900 text-white px-2 py-1 rounded font-bold hover:bg-gray-800 transition">+ Registrar</button>
                             </div>
-                            <div class="flex-1">
-                                ${conteudoHTML}
-                            </div>
+                            <div class="flex-1">${conteudoHTML}</div>
                         </div>
                     </div>
                 `;
             }
         }
 
-        // ==========================================
-        // SALVAR E EDITAR VENDA
-        // ==========================================
         function abrirModalVenda(idVenda = null, dataPreDefinida = null) {
             document.getElementById('containerItensVenda').innerHTML = '';
             
@@ -547,18 +521,18 @@
                 document.getElementById('vendaId').value = v.id;
                 document.getElementById('vendaData').value = v.data_venda;
                 document.getElementById('vendaColab').value = v.colaborador;
-                document.getElementById('vendaStatus').value = v.status || 'PAGO - PIX';
+                document.getElementById('vendaStatus').value = v.status.includes('PIX') ? 'PAGO - PIX' : (v.status.includes('ESPÉCIE') ? 'PAGO - ESPÉCIE' : 'À PAGAR');
+                document.getElementById('vendaValorPago').value = v.valor_pago || '';
                 document.getElementById('vendaObs').value = v.observacao || '';
                 
-                if(v.itens_venda) {
-                    v.itens_venda.forEach(iv => adicionarLinhaProduto(iv.produto_id, iv.qtd));
-                }
+                if(v.itens_venda) v.itens_venda.forEach(iv => adicionarLinhaProduto(iv.produto_id, iv.qtd));
             } else {
                 document.getElementById('tituloModalVenda').innerText = 'Registrar Venda';
                 document.getElementById('vendaId').value = '';
                 document.getElementById('vendaData').value = dataPreDefinida || new Date().toISOString().split('T')[0];
                 document.getElementById('vendaColab').value = '';
                 document.getElementById('vendaStatus').value = 'PAGO - PIX';
+                document.getElementById('vendaValorPago').value = '';
                 document.getElementById('vendaObs').value = '';
                 adicionarLinhaProduto(); 
             }
@@ -589,10 +563,7 @@
             document.querySelectorAll('#containerItensVenda > div').forEach(linha => {
                 const select = linha.querySelector('.select-prod');
                 const qtd = parseInt(linha.querySelector('.input-qtd').value) || 0;
-                if(select.selectedIndex > 0) {
-                    const preco = parseFloat(select.options[select.selectedIndex].getAttribute('data-preco'));
-                    total += qtd * preco;
-                }
+                if(select.selectedIndex > 0) total += qtd * parseFloat(select.options[select.selectedIndex].getAttribute('data-preco'));
             });
             document.getElementById('vendaTotalView').innerText = formatarMoeda(total);
             return total;
@@ -600,87 +571,124 @@
 
         async function salvarVenda(e) {
             e.preventDefault();
-            const idVenda = document.getElementById('vendaId').value;
+            const idForm = document.getElementById('vendaId').value;
             const dataV = document.getElementById('vendaData').value;
             const colab = document.getElementById('vendaColab').value.trim();
-            const status = document.getElementById('vendaStatus').value;
-            const obs = document.getElementById('vendaObs').value.trim();
-            const total = calcularTotalVendaModal();
+            const statusBase = document.getElementById('vendaStatus').value;
+            let obs = document.getElementById('vendaObs').value.trim();
+            let valorPagoInp = document.getElementById('vendaValorPago').value;
 
             const itensNaTela = [];
             document.querySelectorAll('#containerItensVenda > div').forEach(linha => {
                 const select = linha.querySelector('.select-prod');
                 const qtd = parseInt(linha.querySelector('.input-qtd').value);
-                if(select.value && qtd > 0) {
-                    const preco = parseFloat(select.options[select.selectedIndex].getAttribute('data-preco'));
-                    itensNaTela.push({ produto_id: select.value, qtd: qtd, preco_unitario: preco });
-                }
+                if(select.value && qtd > 0) itensNaTela.push({ produto_id: select.value, qtd: qtd, preco_unitario: parseFloat(select.options[select.selectedIndex].getAttribute('data-preco')) });
             });
 
-            if(itensNaTela.length === 0) return alertaErro('Adicione pelo menos um produto!');
+            if(itensNaTela.length === 0) return alertaErro('Adicione um produto!');
 
             toggleLoading(true);
             try {
-                // SE EDIÇÃO, DEVOLVE ESTOQUE ANTIGO
-                if(idVenda) {
-                    const vendaAntiga = bancoVendas.find(v => v.id == idVenda);
-                    if(vendaAntiga && vendaAntiga.itens_venda) {
-                        for(const itemAntigo of vendaAntiga.itens_venda) {
-                            await supabaseClient.rpc('increment_product_qty', { prod_id: itemAntigo.produto_id, qty_to_add: itemAntigo.qtd });
+                let idFinal = idForm;
+                let itensFinais = [...itensNaTela];
+                let valPagoMerge = valorPagoInp ? parseFloat(valorPagoInp) : null;
+
+                // LÓGICA DE ACÚMULO AUTOMÁTICO PARA A MESMA PESSOA NO MESMO DIA (Se for cadastro novo)
+                if (!idForm) {
+                    const existente = bancoVendas.find(v => v.colaborador.toLowerCase() === colab.toLowerCase() && v.data_venda === dataV);
+                    if (existente) {
+                        idFinal = existente.id;
+                        
+                        // Devolve estoque antigo
+                        if(existente.itens_venda) {
+                            for(const iv of existente.itens_venda) {
+                                await supabaseClient.rpc('increment_product_qty', { prod_id: iv.produto_id, qty_to_add: iv.qtd });
+                            }
+                        }
+                        await supabaseClient.from('itens_venda').delete().eq('venda_id', idFinal);
+
+                        // Mescla itens na memória
+                        const mapa = {};
+                        existente.itens_venda.forEach(i => { mapa[i.produto_id] = { ...i }; });
+                        itensNaTela.forEach(i => {
+                            if(mapa[i.produto_id]) mapa[i.produto_id].qtd += i.qtd;
+                            else mapa[i.produto_id] = { ...i };
+                        });
+                        itensFinais = Object.values(mapa);
+
+                        // Mescla obs e valor pago anterior (se o usuário não preencheu o valor manual na tela)
+                        if (existente.observacao && obs) obs = existente.observacao + " | " + obs;
+                        else if (existente.observacao) obs = existente.observacao;
+
+                        if (valPagoMerge === null) {
+                            valPagoMerge = (parseFloat(existente.valor_pago) || 0) + (statusBase.includes('PAGO') ? itensNaTela.reduce((a,i)=>a+(i.qtd*i.preco_unitario),0) : 0);
                         }
                     }
+                } else {
+                    // Edição Comum: Devolve Estoque Antigo
+                    const vAntiga = bancoVendas.find(v => v.id == idForm);
+                    if(vAntiga && vAntiga.itens_venda) {
+                        for(const iv of vAntiga.itens_venda) {
+                            await supabaseClient.rpc('increment_product_qty', { prod_id: iv.produto_id, qty_to_add: iv.qtd });
+                        }
+                    }
+                    await supabaseClient.from('itens_venda').delete().eq('venda_id', idFinal);
                 }
 
-                // ABATE O NOVO ESTOQUE
-                for(const itemNovo of itensNaTela) {
-                    await supabaseClient.rpc('decrement_product_qty', { prod_id: itemNovo.produto_id, qty_to_remove: itemNovo.qtd });
+                const totalFinal = itensFinais.reduce((acc, i) => acc + (i.qtd * i.preco_unitario), 0);
+                
+                // Define valor pago real e Status dinâmico
+                if (valPagoMerge === null) valPagoMerge = statusBase.includes('PAGO') ? totalFinal : 0;
+                
+                let statusFinal = statusBase;
+                if (valPagoMerge >= totalFinal) statusFinal = statusBase.includes('PAGO') ? statusBase : 'PAGO - PIX';
+                else statusFinal = 'À PAGAR';
+
+                const dadosVenda = { 
+                    colaborador: colab, data_venda: dataV, status: statusFinal, 
+                    observacao: obs, total_devido: totalFinal, valor_pago: valPagoMerge 
+                };
+
+                // Abate estoque
+                for(const it of itensFinais) {
+                    await supabaseClient.rpc('decrement_product_qty', { prod_id: it.produto_id, qty_to_remove: it.qtd });
                 }
 
-                const dadosVenda = { colaborador: colab, data_venda: dataV, status: status, observacao: obs, total_devido: total };
-                let idParaInserirItens = idVenda;
-
-                if(idVenda) {
-                    await supabaseClient.from('vendas').update(dadosVenda).eq('id', idVenda);
-                    await supabaseClient.from('itens_venda').delete().eq('venda_id', idVenda);
+                if(idFinal) {
+                    await supabaseClient.from('vendas').update(dadosVenda).eq('id', idFinal);
                 } else {
                     const { data: nVenda } = await supabaseClient.from('vendas').insert([dadosVenda]).select();
-                    idParaInserirItens = nVenda[0].id;
+                    idFinal = nVenda[0].id;
                 }
 
-                const itensPreenchidos = itensNaTela.map(i => ({ venda_id: idParaInserirItens, produto_id: i.produto_id, qtd: i.qtd, preco_unitario: i.preco_unitario }));
-                await supabaseClient.from('itens_venda').insert(itensPreenchidos);
+                const insertsItens = itensFinais.map(i => ({ venda_id: idFinal, produto_id: i.produto_id, qtd: i.qtd, preco_unitario: i.preco_unitario }));
+                await supabaseClient.from('itens_venda').insert(insertsItens);
 
-                alertaSucesso('Venda salva! Estoque ajustado.');
+                alertaSucesso('Venda registrada com sucesso!');
                 fecharModal('modalVenda');
                 await sincronizarBanco();
 
-            } catch (err) {
-                alertaErro('Erro ao processar a venda. Verifique o saldo do estoque.');
-                console.error(err);
-            }
+            } catch (err) { alertaErro('Erro. Verifique conexão e estoque.'); console.error(err); }
             toggleLoading(false);
         }
 
         // ==========================================
-        // DASHBOARD E FINANCEIRO
+        // FINANCEIRO E PAGAMENTOS PARCIAIS
         // ==========================================
         function renderizarDashboard() {
             const currentWeekStart = obterInicioSemana(new Date());
-            const currentWeekEnd = new Date(currentWeekStart);
-            currentWeekEnd.setDate(currentWeekEnd.getDate() + 6);
+            const currentWeekEnd = new Date(currentWeekStart); currentWeekEnd.setDate(currentWeekEnd.getDate() + 6);
 
-            let fatGeral = 0;
-            let valEstoque = bancoProdutos.reduce((acc, p) => acc + (p.qtd * p.preco), 0);
-            let recSemana = 0;
-            let pendSemana = 0;
+            let fatGeral = 0, valEstoque = bancoProdutos.reduce((a, p) => a + (p.qtd * p.preco), 0);
+            let recSemana = 0, pendSemana = 0;
 
             bancoVendas.forEach(v => {
                 fatGeral += parseFloat(v.total_devido);
                 if(v.data_venda) {
                     const dv = new Date(v.data_venda + 'T12:00:00');
                     if(dv >= currentWeekStart && dv <= currentWeekEnd) {
-                        if(v.status.includes('PAGO')) recSemana += parseFloat(v.total_devido);
-                        else pendSemana += parseFloat(v.total_devido);
+                        recSemana += parseFloat(v.valor_pago || 0);
+                        pendSemana += (parseFloat(v.total_devido) - parseFloat(v.valor_pago || 0));
                     }
                 }
             });
@@ -697,19 +705,18 @@
                 const nome = v.colaborador;
                 if(!relatorio[nome]) relatorio[nome] = { pago: 0, pendente: 0, total: 0 };
                 
-                const valor = parseFloat(v.total_devido);
-                relatorio[nome].total += valor;
-                if(v.status.includes('PAGO')) relatorio[nome].pago += valor;
-                else relatorio[nome].pendente += valor;
+                const devido = parseFloat(v.total_devido);
+                const pago = parseFloat(v.valor_pago || 0);
+                
+                relatorio[nome].total += devido;
+                relatorio[nome].pago += pago;
+                relatorio[nome].pendente += (devido - pago);
             });
 
             const arrayRelatorio = Object.keys(relatorio).map(k => ({ nome: k, ...relatorio[k] })).sort((a,b) => b.total - a.total);
             const tbody = document.getElementById('tabelaFinanceiro');
 
-            if(arrayRelatorio.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">Nenhum dado financeiro.</td></tr>`;
-                return;
-            }
+            if(arrayRelatorio.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-400">Sem dados.</td></tr>`;
 
             tbody.innerHTML = arrayRelatorio.map(r => `
                 <tr class="hover:bg-gray-50 border-b">
@@ -717,14 +724,58 @@
                     <td class="p-4 font-bold text-green-600">${formatarMoeda(r.pago)}</td>
                     <td class="p-4 font-bold ${r.pendente > 0 ? 'text-red-600' : 'text-gray-400'}">${formatarMoeda(r.pendente)}</td>
                     <td class="p-4 font-bold text-blue-600">${formatarMoeda(r.total)}</td>
+                    <td class="p-4 text-center">
+                        ${r.pendente > 0 ? `<button onclick="abrirModalPagamento('${r.nome}', ${r.pendente})" class="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-bold hover:bg-green-200"><i class="fa-solid fa-money-bill-wave mr-1"></i> Abater Dívida</button>` : `<span class="text-xs text-gray-400 font-bold"><i class="fa-solid fa-check mr-1"></i>Tudo Certo</span>`}
+                    </td>
                 </tr>
             `).join('');
         }
 
-        // INIT
-        window.onload = () => {
-            sincronizarBanco();
-        };
+        function abrirModalPagamento(nome, divida) {
+            document.getElementById('pagColabNome').innerText = nome;
+            document.getElementById('pagFaltaView').innerText = formatarMoeda(divida);
+            document.getElementById('pagValorInp').value = divida.toFixed(2);
+            document.getElementById('modalPagamento').classList.remove('hidden');
+        }
+
+        async function processarPagamento() {
+            const colab = document.getElementById('pagColabNome').innerText;
+            let pagamentoRestante = parseFloat(document.getElementById('pagValorInp').value);
+            const metodo = document.getElementById('pagMetodoInp').value;
+
+            if(!pagamentoRestante || pagamentoRestante <= 0) return alertaErro('Insira um valor válido para abater.');
+
+            toggleLoading(true);
+            try {
+                // Pega as vendas da pessoa que ainda tem saldo devedor, da mais antiga pra mais nova
+                let vendasPendentes = bancoVendas
+                    .filter(v => v.colaborador === colab && (parseFloat(v.total_devido) - parseFloat(v.valor_pago || 0)) > 0)
+                    .sort((a,b) => new Date(a.data_venda) - new Date(b.data_venda));
+
+                for (let v of vendasPendentes) {
+                    if (pagamentoRestante <= 0) break;
+
+                    let faltaNestaVenda = parseFloat(v.total_devido) - parseFloat(v.valor_pago || 0);
+                    let abaterAgora = Math.min(faltaNestaVenda, pagamentoRestante);
+                    
+                    let novoValorPago = parseFloat(v.valor_pago || 0) + abaterAgora;
+                    let novoStatus = (novoValorPago >= parseFloat(v.total_devido)) ? `PAGO - ${metodo}` : 'À PAGAR';
+
+                    await supabaseClient.from('vendas').update({ valor_pago: novoValorPago, status: novoStatus }).eq('id', v.id);
+
+                    pagamentoRestante -= abaterAgora;
+                }
+
+                alertaSucesso('Pagamento registrado e dívidas abatidas!');
+                fecharModal('modalPagamento');
+                await sincronizarBanco();
+
+            } catch (e) { alertaErro('Erro ao salvar o pagamento.'); console.error(e); }
+            toggleLoading(false);
+        }
+
+        // START
+        window.onload = () => sincronizarBanco();
 
     </script>
 </body>
