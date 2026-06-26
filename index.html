@@ -1621,169 +1621,401 @@
             document.getElementById('modalRelatorioMes').classList.remove('hidden');
         }
 
-        // ==========================================
-        // RELATÓRIOS - HISTÓRICO DE SALDOS (NOVO)
-        // ==========================================
-        async function renderizarPastasHistoricoSaldos() {
-            const container = document.getElementById('gridPastasSaldos');
-            const semanas = new Set();
-            
-            bancoGeralMovimentacoes.forEach(m => {
-                if(m.data_movimento) {
-                    semanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
-                }
-            });
+// ==========================================
+// RELATÓRIOS - HISTÓRICO DE SALDOS (CORRIGIDO)
+// ==========================================
+async function renderizarPastasHistoricoSaldos() {
+    const container = document.getElementById('gridPastasSaldos');
+    const semanas = new Set();
+    
+    // Buscar semanas que tiveram movimentações OU vendas
+    bancoGeralMovimentacoes.forEach(m => {
+        if(m.data_movimento && m.dono) {
+            semanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
+        }
+    });
+    
+    bancoGeralVendas.forEach(v => {
+        if(v.data_venda && v.dono) {
+            semanas.add(obterInicioSemana(new Date(v.data_venda + 'T12:00:00')).toISOString().split('T')[0]);
+        }
+    });
+
+    container.innerHTML = '';
+    
+    if(semanas.size === 0) {
+        container.innerHTML = '<p class="col-span-full text-center text-gray-400 py-8">Nenhuma movimentação registrada.</p>';
+        return;
+    }
+    
+    for (const semanaIso of Array.from(semanas).sort((a, b) => b.localeCompare(a))) {
+        const [y, m, d] = semanaIso.split('-');
+        const inicioSemana = new Date(y, m - 1, parseInt(d));
+        const fimSemana = new Date(inicioSemana);
+        fimSemana.setDate(fimSemana.getDate() + 6);
         
-            container.innerHTML = '';
-            
-            if(semanas.size === 0) {
-                container.innerHTML = '<p class="col-span-full text-center text-gray-400 py-8">Nenhuma movimentação registrada.</p>';
-                return;
-            }
-            
-            for (const semanaIso of Array.from(semanas).sort((a, b) => b.localeCompare(a))) {
-                const [y, m, d] = semanaIso.split('-');
-                const desc = new Date(y, m - 1, d).toLocaleDateString('pt-BR');
-                const fimSemana = new Date(y, m - 1, parseInt(d) + 6);
-                const descFim = fimSemana.toLocaleDateString('pt-BR');
-        
-                const card = document.createElement('div');
-                card.className = "bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition cursor-pointer";
-                card.onclick = () => abrirHistoricoSaldoDetalhado(semanaIso);
-                card.innerHTML = `
-                    <div class="flex flex-col items-center">
-                        <i class="fa-solid fa-folder-open text-6xl text-indigo-400 mb-3"></i>
-                        <h4 class="font-bold text-indigo-900 text-center mb-1">Semana</h4>
-                        <p class="text-sm text-indigo-700 text-center font-medium">${desc} a ${descFim}</p>
-                        <div class="mt-3 flex gap-2">
-                            <span class="bg-white px-2 py-1 rounded text-xs font-bold text-indigo-600 border border-indigo-200">Ver Detalhes</span>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            }
-        }
+        // Contar total de movimentações na semana
+        const totalMovs = bancoGeralMovimentacoes.filter(m => {
+            if(!m.data_movimento) return false;
+            const dm = new Date(m.data_movimento + 'T12:00:00');
+            return dm >= inicioSemana && dm <= fimSemana && m.dono;
+        }).length;
 
-        async function abrirHistoricoSaldoDetalhado(semanaIso) {
-            semanaHistoricoSelecionada = semanaIso;
-            const [y, m, d] = semanaIso.split('-');
-            const inicioSemana = new Date(y, m - 1, parseInt(d));
-            const fimSemana = new Date(inicioSemana);
-            fimSemana.setDate(fimSemana.getDate() + 6);
-            
-            document.getElementById('tituloHistoricoSaldo').innerText = `Semana de ${inicioSemana.toLocaleDateString('pt-BR')} a ${fimSemana.toLocaleDateString('pt-BR')}`;
-            
-            // Buscar movimentações da semana
-            const movimentacoesSemana = bancoGeralMovimentacoes.filter(m => {
-                if(!m.data_movimento || m.dono !== perfilAtual) return false;
-                const dm = new Date(m.data_movimento + 'T12:00:00');
-                return dm >= inicioSemana && dm <= fimSemana;
-            });
-            
-            // Calcular saldo final de cada produto
-            const saldosFinais = {};
-            bancoProdutos.forEach(p => {
-                saldosFinais[p.nome] = { qtd: 0, produto: p };
-            });
-            
-            // Somar todas as entradas e subtrair saídas até o fim da semana
-            const todasMovs = bancoGeralMovimentacoes.filter(m => {
-                if(!m.data_movimento || m.dono !== perfilAtual) return false;
-                const dm = new Date(m.data_movimento + 'T12:00:00');
-                return dm <= fimSemana;
-            });
-            
-            todasMovs.forEach(m => {
-                const prod = bancoGeralProdutos.find(p => p.id === m.produto_id);
-                if(!prod) return;
-                
-                if(!saldosFinais[prod.nome]) {
-                    saldosFinais[prod.nome] = { qtd: 0, produto: prod };
-                }
-                
-                if(m.tipo === 'ENTRADA' || m.tipo === 'TRANSFERENCIA_ENTRADA') {
-                    saldosFinais[prod.nome].qtd += m.qtd;
-                } else if(m.tipo === 'SAIDA' || m.tipo === 'CONSUMO' || m.tipo === 'TRANSFERENCIA_SAIDA') {
-                    saldosFinais[prod.nome].qtd -= m.qtd;
-                }
-            });
-            
-            // Renderizar saldo final
-            const listaSaldo = document.getElementById('listaSaldoFinal');
-            const saldosComValor = Object.values(saldosFinais).filter(s => s.qtd > 0);
-            if(saldosComValor.length === 0) {
-                listaSaldo.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">Sem saldo</p>';
-            } else {
-                listaSaldo.innerHTML = saldosComValor.map(s => `
-                    <div class="bg-white rounded-lg p-3 border border-indigo-200">
-                        <p class="font-bold text-gray-900 text-sm">${s.produto.nome}</p>
-                        <p class="text-indigo-600 font-bold">${s.qtd} un</p>
-                    </div>
-                `).join('');
-            }
-            
-            // Renderizar consumos
-            const consumos = movimentacoesSemana.filter(m => m.tipo === 'CONSUMO');
-            const listaConsumos = document.getElementById('listaConsumos');
-            if(consumos.length === 0) {
-                listaConsumos.innerHTML = '<p class="text-gray-400 text-sm italic">Nenhum consumo registrado</p>';
-            } else {
-                listaConsumos.innerHTML = consumos.map(c => {
-                    const prod = bancoGeralProdutos.find(p => p.id === c.produto_id);
-                    return `
-                        <div class="bg-white rounded-lg p-3 border border-orange-200 flex justify-between items-center">
-                            <div>
-                                <p class="font-bold text-gray-900">${prod ? prod.nome : 'Produto deletado'}</p>
-                                <p class="text-xs text-gray-500">${formatarData(c.data_movimento)}</p>
-                            </div>
-                            <span class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm font-bold">${c.qtd} un</span>
-                        </div>
-                    `;
-                }).join('');
-            }
-            
-            // Renderizar transferências
-            const transferencias = movimentacoesSemana.filter(m => m.tipo === 'TRANSFERENCIA_SAIDA' || m.tipo === 'TRANSFERENCIA_ENTRADA');
-            const listaTransf = document.getElementById('listaTransferencias');
-            if(transferencias.length === 0) {
-                listaTransf.innerHTML = '<p class="text-gray-400 text-sm italic">Nenhuma transferência registrada</p>';
-            } else {
-                listaTransf.innerHTML = transferencias.map(t => {
-                    const prod = bancoGeralProdutos.find(p => p.id === t.produto_id);
-                    const ehSaida = t.tipo === 'TRANSFERENCIA_SAIDA';
-                    return `
-                        <div class="bg-white rounded-lg p-3 border border-blue-200 flex justify-between items-center">
-                            <div>
-                                <p class="font-bold text-gray-900">${prod ? prod.nome : 'Produto deletado'}</p>
-                                <p class="text-xs text-gray-500">${ehSaida ? 'Enviado para' : 'Recebido de'}: <span class="font-bold">${t.dono_relacionado}</span></p>
-                                <p class="text-xs text-gray-500">${formatarData(t.data_movimento)}</p>
-                            </div>
-                            <span class="${ehSaida ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'} px-2 py-1 rounded text-sm font-bold">
-                                ${ehSaida ? '-' : '+'}${t.qtd} un
-                            </span>
-                        </div>
-                    `;
-                }).join('');
-            }
-            
-            document.getElementById('modalHistoricoSaldo').classList.remove('hidden');
-        }
+        const card = document.createElement('div');
+        card.className = "bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition cursor-pointer";
+        card.onclick = () => abrirHistoricoSaldoDetalhado(semanaIso);
+        card.innerHTML = `
+            <div class="flex flex-col items-center">
+                <i class="fa-solid fa-folder-open text-6xl text-indigo-400 mb-3"></i>
+                <h4 class="font-bold text-indigo-900 text-center mb-1">Semana</h4>
+                <p class="text-sm text-indigo-700 text-center font-medium">${inicioSemana.toLocaleDateString('pt-BR')} a ${fimSemana.toLocaleDateString('pt-BR')}</p>
+                <div class="mt-3 flex gap-2">
+                    <span class="bg-white px-3 py-1 rounded-full text-xs font-bold text-indigo-600 border border-indigo-200">
+                        <i class="fa-solid fa-list mr-1"></i>${totalMovs} movimentações
+                    </span>
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+    }
+}
 
-        function acaoTransferirDaSemana() {
-            fecharModal('modalHistoricoSaldo');
-            setTimeout(() => abrirModalTransferencia(), 300);
-        }
-
-        function acaoConsumirDaSemana() {
-            fecharModal('modalHistoricoSaldo');
-            setTimeout(() => abrirModalConsumo(), 300);
-        }
-
-        // INICIALIZAÇÃO
-        window.onload = () => {
-            sincronizarBanco();
+async function abrirHistoricoSaldoDetalhado(semanaIso) {
+    semanaHistoricoSelecionada = semanaIso;
+    const [y, m, d] = semanaIso.split('-');
+    const inicioSemana = new Date(y, m - 1, parseInt(d));
+    const fimSemana = new Date(inicioSemana);
+    fimSemana.setDate(fimSemana.getDate() + 6);
+    
+    document.getElementById('tituloHistoricoSaldo').innerText = `Semana de ${inicioSemana.toLocaleDateString('pt-BR')} a ${fimSemana.toLocaleDateString('pt-BR')}`;
+    
+    // Buscar TODAS as movimentações da semana
+    const movimentacoesSemana = bancoGeralMovimentacoes.filter(m => {
+        if(!m.data_movimento) return false;
+        const dm = new Date(m.data_movimento + 'T12:00:00');
+        return dm >= inicioSemana && dm <= fimSemana;
+    }).sort((a, b) => new Date(a.data_movimento) - new Date(b.data_movimento));
+    
+    // Agrupar movimentações por dia
+    const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const movimentacoesPorDia = {};
+    
+    // Inicializar todos os dias da semana
+    for(let i = 0; i < 7; i++) {
+        const diaAtual = new Date(inicioSemana);
+        diaAtual.setDate(diaAtual.getDate() + i);
+        const isoDia = diaAtual.toISOString().split('T')[0];
+        movimentacoesPorDia[isoDia] = {
+            data: diaAtual,
+            nomeDia: diasSemana[diaAtual.getDay()],
+            entradas: [],
+            saidas: [],
+            consumos: [],
+            transferenciasEntrada: [],
+            transferenciasSaida: [],
+            saldoAcumulado: {}
         };
+    }
+    
+    // Processar cada movimentação
+    let saldoAcumuladoGeral = {};
+    
+    movimentacoesSemana.forEach(m => {
+        const prod = bancoGeralProdutos.find(p => p.id === m.produto_id);
+        if(!prod) return;
+        
+        const isoDia = m.data_movimento;
+        if(!movimentacoesPorDia[isoDia]) return;
+        
+        // Inicializar saldo do produto se não existir
+        if(!saldoAcumuladoGeral[prod.nome]) {
+            saldoAcumuladoGeral[prod.nome] = 0;
+        }
+        
+        const registro = {
+            produto: prod.nome,
+            qtd: m.qtd,
+            horario: new Date(m.data_movimento + 'T12:00:00').toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
+            dono: m.dono
+        };
+        
+        if(m.tipo === 'ENTRADA') {
+            movimentacoesPorDia[isoDia].entradas.push(registro);
+            saldoAcumuladoGeral[prod.nome] += m.qtd;
+        } else if(m.tipo === 'CONSUMO') {
+            movimentacoesPorDia[isoDia].consumos.push(registro);
+            saldoAcumuladoGeral[prod.nome] -= m.qtd;
+        } else if(m.tipo === 'TRANSFERENCIA_ENTRADA') {
+            movimentacoesPorDia[isoDia].transferenciasEntrada.push({
+                ...registro,
+                de: m.dono_relacionado
+            });
+            saldoAcumuladoGeral[prod.nome] += m.qtd;
+        } else if(m.tipo === 'TRANSFERENCIA_SAIDA') {
+            movimentacoesPorDia[isoDia].transferenciasSaida.push({
+                ...registro,
+                para: m.dono_relacionado
+            });
+            saldoAcumuladoGeral[prod.nome] -= m.qtd;
+        }
+        
+        // Atualizar saldo acumulado do dia (cópia)
+        movimentacoesPorDia[isoDia].saldoAcumulado = {...saldoAcumuladoGeral};
+    });
+    
+    // Adicionar também as vendas do dia
+    const vendasSemana = bancoGeralVendas.filter(v => {
+        if(!v.data_venda || v.dono !== perfilAtual) return false;
+        const dv = new Date(v.data_venda + 'T12:00:00');
+        return dv >= inicioSemana && dv <= fimSemana;
+    });
+    
+    vendasSemana.forEach(v => {
+        const isoDia = v.data_venda;
+        if(!movimentacoesPorDia[isoDia]) return;
+        
+        (v.itens_venda || []).forEach(iv => {
+            const prod = bancoGeralProdutos.find(p => p.id === iv.produto_id);
+            if(!prod) return;
+            
+            if(!saldoAcumuladoGeral[prod.nome]) {
+                saldoAcumuladoGeral[prod.nome] = 0;
+            }
+            
+            movimentacoesPorDia[isoDia].saidas.push({
+                produto: prod.nome,
+                qtd: iv.qtd,
+                horario: 'Venda',
+                cliente: v.colaborador,
+                valor: formatarMoeda(iv.qtd * iv.preco_unitario)
+            });
+            
+            saldoAcumuladoGeral[prod.nome] -= iv.qtd;
+            movimentacoesPorDia[isoDia].saldoAcumulado = {...saldoAcumuladoGeral};
+        });
+    });
+    
+    // Renderizar timeline por dia
+    let htmlDias = '';
+    const diasOrdenados = Object.keys(movimentacoesPorDia).sort();
+    
+    diasOrdenados.forEach(isoDia => {
+        const dia = movimentacoesPorDia[isoDia];
+        const temMovimentacao = dia.entradas.length > 0 || dia.saidas.length > 0 || 
+                               dia.consumos.length > 0 || dia.transferenciasEntrada.length > 0 || 
+                               dia.transferenciasSaida.length > 0;
+        
+        if(!temMovimentacao) return;
+        
+        // Calcular total adicionado no dia
+        const totalAdicionado = dia.entradas.reduce((acc, e) => acc + e.qtd, 0) + 
+                               dia.transferenciasEntrada.reduce((acc, t) => acc + t.qtd, 0);
+        const totalRetirado = dia.saidas.reduce((acc, s) => acc + s.qtd, 0) + 
+                             dia.consumos.reduce((acc, c) => acc + c.qtd, 0) +
+                             dia.transferenciasSaida.reduce((acc, t) => acc + t.qtd, 0);
+        
+        htmlDias += `
+            <div class="bg-white rounded-xl border-2 ${totalAdicionado > 0 ? 'border-green-200' : 'border-gray-200'} overflow-hidden mb-4">
+                <div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
+                    <div class="flex items-center">
+                        <span class="font-bold text-gray-900 text-lg">${dia.nomeDia}</span>
+                        <span class="ml-3 text-sm text-gray-500">${formatarData(isoDia)}</span>
+                    </div>
+                    ${totalAdicionado > 0 ? `
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
+                            <i class="fa-solid fa-plus mr-1"></i>+${totalAdicionado} un
+                        </span>
+                    ` : ''}
+                </div>
+                
+                <div class="p-4 space-y-3">
+                    ${dia.entradas.length > 0 ? `
+                        <div>
+                            <p class="text-xs font-bold text-gray-500 uppercase mb-2">
+                                <i class="fa-solid fa-box mr-1"></i>Estoque Adicionado
+                            </p>
+                            <div class="space-y-1">
+                                ${dia.entradas.map(e => `
+                                    <div class="flex justify-between items-center bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                                        <span class="font-medium text-gray-900">${e.produto}</span>
+                                        <span class="font-bold text-green-700">+${e.qtd} un</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${dia.transferenciasEntrada.length > 0 ? `
+                        <div>
+                            <p class="text-xs font-bold text-gray-500 uppercase mb-2">
+                                <i class="fa-solid fa-arrow-right mr-1"></i>Recebido por Transferência
+                            </p>
+                            <div class="space-y-1">
+                                ${dia.transferenciasEntrada.map(t => `
+                                    <div class="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                                        <div>
+                                            <span class="font-medium text-gray-900">${t.produto}</span>
+                                            <span class="text-xs text-gray-500 ml-2">de ${t.de}</span>
+                                        </div>
+                                        <span class="font-bold text-blue-700">+${t.qtd} un</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${dia.saidas.length > 0 ? `
+                        <div>
+                            <p class="text-xs font-bold text-gray-500 uppercase mb-2">
+                                <i class="fa-solid fa-cart-shopping mr-1"></i>Vendas Realizadas
+                            </p>
+                            <div class="space-y-1">
+                                ${dia.saidas.map(s => `
+                                    <div class="flex justify-between items-center bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                        <div>
+                                            <span class="font-medium text-gray-900">${s.produto}</span>
+                                            <span class="text-xs text-gray-500 ml-2">${s.cliente}</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="font-bold text-red-700 block">-${s.qtd} un</span>
+                                            <span class="text-xs text-gray-500">${s.valor}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${dia.consumos.length > 0 ? `
+                        <div>
+                            <p class="text-xs font-bold text-gray-500 uppercase mb-2">
+                                <i class="fa-solid fa-cookie-bite mr-1"></i>Consumo Próprio
+                            </p>
+                            <div class="space-y-1">
+                                ${dia.consumos.map(c => `
+                                    <div class="flex justify-between items-center bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+                                        <span class="font-medium text-gray-900">${c.produto}</span>
+                                        <span class="font-bold text-orange-700">-${c.qtd} un</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${dia.transferenciasSaida.length > 0 ? `
+                        <div>
+                            <p class="text-xs font-bold text-gray-500 uppercase mb-2">
+                                <i class="fa-solid fa-arrow-left mr-1"></i>Enviado por Transferência
+                            </p>
+                            <div class="space-y-1">
+                                ${dia.transferenciasSaida.map(t => `
+                                    <div class="flex justify-between items-center bg-purple-50 border border-purple-200 rounded-lg px-3 py-2">
+                                        <div>
+                                            <span class="font-medium text-gray-900">${t.produto}</span>
+                                            <span class="text-xs text-gray-500 ml-2">para ${t.para}</span>
+                                        </div>
+                                        <span class="font-bold text-purple-700">-${t.qtd} un</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${Object.keys(dia.saldoAcumulado).filter(k => dia.saldoAcumulado[k] > 0).length > 0 ? `
+                        <div class="border-t pt-3 mt-3">
+                            <p class="text-xs font-bold text-indigo-600 uppercase mb-2">
+                                <i class="fa-solid fa-chart-line mr-1"></i>Saldo Acumulado no Dia
+                            </p>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                ${Object.entries(dia.saldoAcumulado)
+                                    .filter(([_, qtd]) => qtd > 0)
+                                    .map(([nome, qtd]) => `
+                                        <div class="bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2 text-center">
+                                            <p class="text-xs text-gray-600 truncate">${nome}</p>
+                                            <p class="font-bold text-indigo-700">${qtd} un</p>
+                                        </div>
+                                    `).join('')
+                                }
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    });
+    
+    // Calcular saldo final da semana
+    const saldoFinal = {};
+    bancoProdutos.forEach(p => {
+        const totalEntradas = movimentacoesSemana
+            .filter(m => m.produto_id === p.id && m.dono === perfilAtual && 
+                        (m.tipo === 'ENTRADA' || m.tipo === 'TRANSFERENCIA_ENTRADA'))
+            .reduce((acc, m) => acc + m.qtd, 0);
+        
+        const totalSaidas = movimentacoesSemana
+            .filter(m => m.produto_id === p.id && m.dono === perfilAtual && 
+                        (m.tipo === 'CONSUMO' || m.tipo === 'TRANSFERENCIA_SAIDA'))
+            .reduce((acc, m) => acc + m.qtd, 0);
+        
+        const totalVendas = bancoGeralVendas
+            .filter(v => v.dono === perfilAtual)
+            .flatMap(v => v.itens_venda || [])
+            .filter(iv => iv.produto_id === p.id)
+            .reduce((acc, iv) => acc + iv.qtd, 0);
+        
+        const saldo = totalEntradas - totalSaidas - totalVendas;
+        if(saldo > 0) {
+            saldoFinal[p.nome] = saldo;
+        }
+    });
+    
+    // Atualizar modal
+    document.getElementById('listaSaldoFinal').innerHTML = Object.entries(saldoFinal).length > 0 ? 
+        Object.entries(saldoFinal).map(([nome, qtd]) => `
+            <div class="bg-white rounded-lg p-3 border border-indigo-200 shadow-sm">
+                <p class="font-bold text-gray-900 text-sm">${nome}</p>
+                <p class="text-indigo-600 font-bold text-lg">${qtd} un</p>
+            </div>
+        `).join('') : 
+        '<p class="col-span-full text-gray-400 text-center py-4">Sem saldo restante</p>';
+    
+    // Inserir timeline no modal
+    let modalContent = document.querySelector('#modalHistoricoSaldo .space-y-6');
+    let timelineSection = modalContent.querySelector('#timelineSemana');
+    
+    if(!timelineSection) {
+        timelineSection = document.createElement('div');
+        timelineSection.id = 'timelineSemana';
+        timelineSection.className = 'space-y-4';
+        // Inserir após o título
+        const tituloEl = modalContent.querySelector('h3');
+        if(tituloEl && tituloEl.parentElement) {
+            modalContent.insertBefore(timelineSection, tituloEl.parentElement.nextSibling);
+        } else {
+            modalContent.insertBefore(timelineSection, modalContent.firstChild);
+        }
+    }
+    
+    timelineSection.innerHTML = htmlDias || '<div class="bg-white rounded-xl p-8 text-center text-gray-400 border-2 border-dashed border-gray-300">Nenhuma movimentação registrada nesta semana</div>';
+    
+    document.getElementById('modalHistoricoSaldo').classList.remove('hidden');
+}
 
+function acaoTransferirDaSemana() {
+    fecharModal('modalHistoricoSaldo');
+    setTimeout(() => abrirModalTransferencia(), 300);
+}
+
+function acaoConsumirDaSemana() {
+    fecharModal('modalHistoricoSaldo');
+    setTimeout(() => abrirModalConsumo(), 300);
+}
+
+// INICIALIZAÇÃO
+window.onload = () => {
+    sincronizarBanco();
+};
+        
     </script>
 </body>
 </html>
