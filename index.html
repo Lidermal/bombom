@@ -14,6 +14,38 @@
     <style>
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Modal Slide da Direita */
+        .modal-slide-right {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            max-width: 600px;
+            height: 100vh;
+            background: white;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.3);
+            transition: right 0.3s ease-in-out;
+            z-index: 100;
+            overflow-y: auto;
+        }
+        .modal-slide-right.active {
+            right: 0;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 99;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
         @media (min-width: 768px) {
             .md\:vertical-text { writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); }
         }
@@ -22,6 +54,22 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        
+        /* Cards de Venda */
+        .card-venda {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .card-venda:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Recibo */
+        .recibo-papel {
+            background: linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%);
+            border: 2px dashed #e5e7eb;
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex min-h-screen font-sans overflow-hidden">
@@ -167,20 +215,50 @@
             </section>
 
             <section id="aba-financeiro" class="aba-conteudo hidden space-y-4 md:space-y-6 fade-in">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="overflow-x-auto w-full">
-                        <table class="w-full text-left min-w-[700px] md:min-w-full">
-                            <thead class="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                    <th class="p-4 text-xs md:text-sm font-semibold text-gray-600">Colaborador</th>
-                                    <th class="p-4 text-xs md:text-sm font-semibold text-green-600">Total Pago</th>
-                                    <th class="p-4 text-xs md:text-sm font-semibold text-red-600">Pendente</th>
-                                    <th class="p-4 text-xs md:text-sm font-semibold text-blue-600">Total Acumulado</th>
-                                    <th class="p-4 text-xs md:text-sm font-semibold text-gray-600 text-center">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelaFinanceiro" class="divide-y divide-gray-100"></tbody>
-                        </table>
+                <div class="flex flex-col md:flex-row gap-4 mb-4">
+                    <input type="text" id="filtroFinanceiroNome" placeholder="Buscar colaborador..." class="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500" onkeyup="renderizarFinanceiro()">
+                    <select id="filtroFinanceiroStatus" class="border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500" onchange="renderizarFinanceiro()">
+                        <option value="">Todos os Status</option>
+                        <option value="pendente">Pendentes</option>
+                        <option value="pago">Pagos</option>
+                    </select>
+                </div>
+                <div id="containerFinanceiroCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Cards serão inseridos aqui -->
+                </div>
+            </section>
+
+            <section id="aba-recibo" class="aba-conteudo hidden space-y-6 fade-in">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4"><i class="fa-solid fa-receipt mr-2 text-blue-600"></i>Gerar Recibo</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Selecione o Cliente</label>
+                            <select id="reciboCliente" class="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" onchange="carregarDadosRecibo()">
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Período</label>
+                            <select id="reciboPeriodo" class="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" onchange="carregarDadosRecibo()">
+                                <option value="mes-atual">Mês Atual</option>
+                                <option value="semana-atual">Semana Atual</option>
+                                <option value="total">Total Geral</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="areaRecibo" class="hidden">
+                        <div id="reciboContent" class="recibo-papel rounded-xl p-8 max-w-2xl mx-auto">
+                            <!-- Recibo será gerado aqui -->
+                        </div>
+                        <div class="flex justify-center gap-4 mt-6">
+                            <button onclick="imprimirRecibo()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium">
+                                <i class="fa-solid fa-print mr-2"></i>Imprimir
+                            </button>
+                            <button onclick="baixarReciboPDF()" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-medium">
+                                <i class="fa-solid fa-download mr-2"></i>Baixar PDF
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -214,7 +292,21 @@
         </div>
     </main>
 
-    <!-- Modal Relatorio Mes (Já Existente) -->
+    <!-- Modal Slide da Direita para Detalhes da Venda -->
+    <div id="modalOverlay" class="modal-overlay" onclick="fecharModalDetalhesVenda()"></div>
+    <div id="modalDetalhesVenda" class="modal-slide-right bg-white">
+        <div class="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
+            <h3 class="text-xl font-bold text-gray-800">Detalhes da Venda</h3>
+            <button onclick="fecharModalDetalhesVenda()" class="text-gray-400 hover:text-gray-700 text-2xl w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        <div id="conteudoDetalhesVenda" class="p-6">
+            <!-- Conteúdo dinâmico -->
+        </div>
+    </div>
+
+    <!-- Modal Relatorio Mes -->
     <div id="modalRelatorioMes" class="fixed inset-0 bg-black bg-opacity-70 hidden z-[70] flex items-center justify-center backdrop-blur-sm p-4 fade-in">
         <div class="bg-gray-50 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             <div class="bg-gray-900 p-5 border-b flex justify-between items-center shrink-0 text-white">
@@ -256,6 +348,48 @@
             </div>
             <div class="p-4 bg-white border-t text-right shrink-0">
                 <button onclick="fecharModal('modalRelatorioMes')" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-bold transition">Fechar Fechamento</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalhado do Histórico de Saldos -->
+    <div id="modalHistoricoSaldo" class="fixed inset-0 bg-black bg-opacity-70 hidden z-[70] flex items-center justify-center backdrop-blur-sm p-4 fade-in">
+        <div class="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="bg-indigo-600 p-5 border-b flex justify-between items-center shrink-0 text-white">
+                <h3 class="font-bold text-xl flex items-center"><i class="fa-solid fa-folder-open mr-3"></i> <span id="tituloHistoricoSaldo">Semana</span></h3>
+                <button onclick="fecharModal('modalHistoricoSaldo')" class="text-indigo-200 hover:text-white text-3xl">&times;</button>
+            </div>
+            
+            <div class="p-6 flex-1 overflow-y-auto space-y-6">
+                <!-- Saldo Final -->
+                <div class="bg-indigo-50 rounded-xl p-4 border border-indigo-200">
+                    <h4 class="font-bold text-indigo-900 mb-3"><i class="fa-solid fa-boxes-stacked mr-2"></i>Saldo Final da Semana</h4>
+                    <div id="listaSaldoFinal" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <!-- Itens inseridos via JS -->
+                    </div>
+                </div>
+
+                <!-- Consumos -->
+                <div class="bg-orange-50 rounded-xl p-4 border border-orange-200">
+                    <h4 class="font-bold text-orange-900 mb-3"><i class="fa-solid fa-cookie-bite mr-2"></i>Consumos Próprios</h4>
+                    <div id="listaConsumos" class="space-y-2">
+                        <!-- Itens inseridos via JS -->
+                    </div>
+                </div>
+
+                <!-- Transferências -->
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                    <h4 class="font-bold text-blue-900 mb-3"><i class="fa-solid fa-right-left mr-2"></i>Transferências</h4>
+                    <div id="listaTransferencias" class="space-y-2">
+                        <!-- Itens inseridos via JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-gray-50 border-t flex gap-3 shrink-0">
+                <button onclick="fecharModal('modalHistoricoSaldo')" class="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-bold transition">Fechar</button>
+                <button onclick="acaoTransferirDaSemana()" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold transition"><i class="fa-solid fa-right-left mr-2"></i>Transferir</button>
+                <button onclick="acaoConsumirDaSemana()" class="flex-1 px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-bold transition"><i class="fa-solid fa-cookie-bite mr-2"></i>Consumir</button>
             </div>
         </div>
     </div>
@@ -416,7 +550,7 @@
     </div>
 
     <script>
-        // API SUPABASE (Suas Chaves)
+        // API SUPABASE
         const SUPABASE_URL = 'https://jyjrzczpuyomatskebfk.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5anJ6Y3pwdXlvbWF0c2tlYmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDExMDcsImV4cCI6MjA5NzM3NzEwN30.texrp9Ayt6rzmQyCYDS1UgJiKm6yUm4-PFq4lIj47hE';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -427,7 +561,8 @@
         
         let bancoProdutos = []; 
         let bancoVendas = [];   
-        let perfilAtual = null; // 'Adriel', 'Cecilia' ou 'Relatorios'
+        let perfilAtual = null;
+        let semanaHistoricoSelecionada = null;
 
         const formatarMoeda = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
         const formatarData = (d) => { if(!d) return ''; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; };
@@ -478,12 +613,14 @@
                     <button onclick="mudarAba('semanal', this)" data-aba="semanal" class="menu-btn w-full flex items-center px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded transition"><i class="fa-solid fa-calendar-week w-6"></i> Semanal</button>
                     <button onclick="mudarAba('estoque', this)" data-aba="estoque" class="menu-btn w-full flex items-center px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded transition"><i class="fa-solid fa-boxes-stacked w-6"></i> Estoque</button>
                     <button onclick="mudarAba('financeiro', this)" data-aba="financeiro" class="menu-btn w-full flex items-center px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded transition"><i class="fa-solid fa-sack-dollar w-6"></i> Financeiro</button>
+                    <button onclick="mudarAba('recibo', this)" data-aba="recibo" class="menu-btn w-full flex items-center px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded transition"><i class="fa-solid fa-receipt w-6"></i> Recibo</button>
                 `;
                 navMobile.innerHTML = `
                     <button onclick="mudarAba('dashboard', this)" data-aba="dashboard" class="menu-btn flex-1 flex flex-col items-center justify-center py-3 text-gray-400 hover:text-white transition"><i class="fa-solid fa-chart-pie text-xl mb-1"></i><span class="text-[10px] font-bold uppercase">Painel</span></button>
                     <button onclick="mudarAba('semanal', this)" data-aba="semanal" class="menu-btn flex-1 flex flex-col items-center justify-center py-3 text-gray-400 hover:text-white transition"><i class="fa-solid fa-calendar-week text-xl mb-1"></i><span class="text-[10px] font-bold uppercase">Semanal</span></button>
                     <button onclick="mudarAba('estoque', this)" data-aba="estoque" class="menu-btn flex-1 flex flex-col items-center justify-center py-3 text-gray-400 hover:text-white transition"><i class="fa-solid fa-boxes-stacked text-xl mb-1"></i><span class="text-[10px] font-bold uppercase">Estoque</span></button>
                     <button onclick="mudarAba('financeiro', this)" data-aba="financeiro" class="menu-btn flex-1 flex flex-col items-center justify-center py-3 text-gray-400 hover:text-white transition"><i class="fa-solid fa-sack-dollar text-xl mb-1"></i><span class="text-[10px] font-bold uppercase">Caixa</span></button>
+                    <button onclick="mudarAba('recibo', this)" data-aba="recibo" class="menu-btn flex-1 flex flex-col items-center justify-center py-3 text-gray-400 hover:text-white transition"><i class="fa-solid fa-receipt text-xl mb-1"></i><span class="text-[10px] font-bold uppercase">Recibo</span></button>
                 `;
             }
         }
@@ -505,7 +642,7 @@
                 else btn.classList.add('text-white');
             });
 
-            const titulos = { 'dashboard': 'Dashboard Mensal', 'semanal': 'Controle Semanal', 'estoque': 'Gestão de Estoque', 'financeiro': 'Controle Financeiro', 'relatorios': 'Central de Relatórios' };
+            const titulos = { 'dashboard': 'Dashboard Mensal', 'semanal': 'Controle Semanal', 'estoque': 'Gestão de Estoque', 'financeiro': 'Controle Financeiro', 'recibo': 'Gerar Recibo', 'relatorios': 'Central de Relatórios' };
             document.getElementById('tituloAba').innerText = titulos[abaId] || '';
             
             const containerFiltro = document.getElementById('containerFiltroSemana');
@@ -516,6 +653,7 @@
             if(abaId === 'semanal') carregarVisaoSemanal();
             if(abaId === 'estoque') renderizarEstoque();
             if(abaId === 'financeiro') renderizarFinanceiro();
+            if(abaId === 'recibo') { atualizarListaClientesRecibo(); }
             if(abaId === 'relatorios') { mudarSubAbaRelatorio('fechamentos'); }
         }
 
@@ -579,6 +717,414 @@
         }
 
         // ==========================================
+        // CONTROLE SEMANAL - VISUAL EM CARDS
+        // ==========================================
+        function construirFiltroSemanas() {
+            const select = document.getElementById('filtroSemana');
+            select.innerHTML = '';
+            const setSemanas = new Set();
+            const atualIso = obterInicioSemana(new Date()).toISOString().split('T')[0];
+            setSemanas.add(atualIso);
+
+            bancoVendas.forEach(v => {
+                if(v.data_venda) setSemanas.add(obterInicioSemana(new Date(v.data_venda + 'T12:00:00')).toISOString().split('T')[0]);
+            });
+
+            bancoGeralMovimentacoes.forEach(m => {
+                if(m.data_movimento && m.dono === perfilAtual) {
+                    setSemanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
+                }
+            });
+
+            Array.from(setSemanas).sort((a,b) => new Date(b) - new Date(a)).forEach(isoStr => {
+                const [y, m, d] = isoStr.split('-');
+                const start = new Date(y, m - 1, d);
+                const end = new Date(start); end.setDate(end.getDate() + 6);
+                const option = document.createElement('option');
+                option.value = isoStr;
+                option.innerText = isoStr === atualIso ? `Atual (${start.toLocaleDateString('pt-BR')})` : `${start.toLocaleDateString('pt-BR')} até ${end.toLocaleDateString('pt-BR')}`;
+                select.appendChild(option);
+            });
+        }
+
+        function carregarVisaoSemanal() {
+            const isoStr = document.getElementById('filtroSemana').value;
+            if(!isoStr) return;
+            const [y, m, d] = isoStr.split('-');
+            const semanaStart = new Date(y, m - 1, d, 0,0,0);
+            const semanaEnd = new Date(semanaStart); semanaEnd.setDate(semanaEnd.getDate() + 6); semanaEnd.setHours(23,59,59);
+
+            const vendasDaSemana = bancoVendas.filter(v => {
+                const vd = new Date(v.data_venda + 'T12:00:00');
+                return vd >= semanaStart && vd <= semanaEnd;
+            });
+
+            const diasUteis = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
+            const container = document.getElementById('containerDiasSemana');
+            container.innerHTML = '';
+
+            for(let i=0; i<5; i++) {
+                const diaAtual = new Date(semanaStart); diaAtual.setDate(diaAtual.getDate() + i);
+                const isoDia = diaAtual.toISOString().split('T')[0];
+                const vendasDoDia = vendasDaSemana.filter(v => v.data_venda === isoDia);
+                
+                let cardsHTML = '';
+                
+                if(vendasDoDia.length === 0) {
+                    cardsHTML = `<div class="col-span-full p-8 text-center text-gray-400 italic bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">Nenhuma venda registrada</div>`;
+                } else {
+                    cardsHTML = vendasDoDia.map(v => {
+                        const dev = parseFloat(v.total_devido);
+                        const pg = parseFloat(v.valor_pago || 0);
+                        const statusPago = pg >= dev && dev > 0;
+                        const badgeClass = statusPago ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200';
+                        const statusText = statusPago ? 'PAGO' : 'PENDENTE';
+                        
+                        return `
+                            <div onclick="abrirModalDetalhesVenda(${v.id})" class="card-venda bg-white border-2 ${statusPago ? 'border-green-300' : 'border-red-300'} rounded-xl p-4 hover:shadow-lg transition">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-bold text-gray-900 text-lg">${v.colaborador}</h4>
+                                    <span class="${badgeClass} text-xs px-2 py-1 rounded-full font-bold border">${statusText}</span>
+                                </div>
+                                <div class="text-2xl font-bold text-gray-900 mb-2">${formatarMoeda(dev)}</div>
+                                <div class="text-xs text-gray-500">${(v.itens_venda || []).length} itens</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                container.innerHTML += `
+                    <div class="bg-white rounded-xl shadow-sm border overflow-hidden mb-6">
+                        <div class="bg-gray-900 px-4 py-3 flex justify-between items-center">
+                            <span class="text-sm font-bold text-white uppercase tracking-widest">${diasUteis[i]} - ${formatarData(isoDia)}</span>
+                            <button onclick="abrirModalProduto(null, '${isoDia}')" class="text-xs bg-white text-gray-900 px-3 py-1.5 rounded-lg font-bold hover:bg-gray-100 transition">
+                                <i class="fa-solid fa-plus mr-1"></i>Add Estoque
+                            </button>
+                        </div>
+                        <div class="p-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                ${cardsHTML}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // ==========================================
+        // MODAL SLIDE DA DIREITA - DETALHES DA VENDA
+        // ==========================================
+        function abrirModalDetalhesVenda(idVenda) {
+            const v = bancoVendas.find(x => x.id === idVenda);
+            if(!v) return;
+            
+            const modal = document.getElementById('modalDetalhesVenda');
+            const overlay = document.getElementById('modalOverlay');
+            const conteudo = document.getElementById('conteudoDetalhesVenda');
+            
+            const dev = parseFloat(v.total_devido);
+            const pg = parseFloat(v.valor_pago || 0);
+            const pendente = dev - pg;
+            const statusPago = pg >= dev && dev > 0;
+            
+            conteudo.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center border-b pb-4">
+                        <div>
+                            <h4 class="text-2xl font-bold text-gray-900">${v.colaborador}</h4>
+                            <p class="text-gray-500">${formatarData(v.data_venda)}</p>
+                        </div>
+                        <span class="${statusPago ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} px-4 py-2 rounded-full font-bold text-lg">
+                            ${statusPago ? 'PAGO' : 'PENDENTE'}
+                        </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 p-4 rounded-xl">
+                            <p class="text-sm text-gray-500 mb-1">Total Devido</p>
+                            <p class="text-2xl font-bold text-gray-900">${formatarMoeda(dev)}</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-xl">
+                            <p class="text-sm text-gray-500 mb-1">Valor Pago</p>
+                            <p class="text-2xl font-bold text-green-600">${formatarMoeda(pg)}</p>
+                        </div>
+                    </div>
+                    
+                    ${pendente > 0 ? `
+                        <div class="bg-red-50 border-2 border-red-200 p-4 rounded-xl">
+                            <p class="text-sm text-red-600 mb-1 font-bold">Pendente</p>
+                            <p class="text-3xl font-bold text-red-700">${formatarMoeda(pendente)}</p>
+                        </div>
+                    ` : ''}
+                    
+                    <div>
+                        <h5 class="font-bold text-gray-800 mb-3 text-lg"><i class="fa-solid fa-list mr-2"></i>Itens Vendidos</h5>
+                        <div class="space-y-2">
+                            ${(v.itens_venda || []).map(iv => `
+                                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                                    <div>
+                                        <p class="font-bold text-gray-900">${iv.produto ? iv.produto.nome : 'Produto deletado'}</p>
+                                        <p class="text-sm text-gray-500">${iv.qtd}x ${formatarMoeda(iv.preco_unitario)}</p>
+                                    </div>
+                                    <p class="font-bold text-gray-900">${formatarMoeda(iv.qtd * iv.preco_unitario)}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    ${v.observacao ? `
+                        <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-xl">
+                            <p class="text-sm text-yellow-800"><i class="fa-solid fa-note-sticky mr-2"></i>${v.observacao}</p>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="flex gap-3 pt-4 border-t">
+                        <button onclick="editarVendaDoModal(${v.id})" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">
+                            <i class="fa-solid fa-pen mr-2"></i>Editar
+                        </button>
+                        <button onclick="deletarVendaDoModal(${v.id})" class="flex-1 bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition">
+                            <i class="fa-solid fa-trash mr-2"></i>Excluir
+                        </button>
+                        ${!statusPago ? `
+                            <button onclick="receberPagamentoVenda('${v.colaborador}', ${pendente})" class="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition">
+                                <i class="fa-solid fa-money-bill mr-2"></i>Receber
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            overlay.classList.add('active');
+            modal.classList.add('active');
+        }
+
+        function fecharModalDetalhesVenda() {
+            document.getElementById('modalDetalhesVenda').classList.remove('active');
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        function editarVendaDoModal(id) {
+            fecharModalDetalhesVenda();
+            setTimeout(() => abrirModalVenda(id), 300);
+        }
+
+        function deletarVendaDoModal(id) {
+            fecharModalDetalhesVenda();
+            setTimeout(() => deletarVenda(id), 300);
+        }
+
+        function receberPagamentoVenda(colab, valor) {
+            fecharModalDetalhesVenda();
+            setTimeout(() => abrirModalPagamento(colab, valor), 300);
+        }
+
+        // ==========================================
+        // FINANCEIRO - VISUAL EM CARDS COM FILTRO
+        // ==========================================
+        function renderizarFinanceiro() {
+            const filtroNome = document.getElementById('filtroFinanceiroNome').value.toLowerCase();
+            const filtroStatus = document.getElementById('filtroFinanceiroStatus').value;
+            
+            const relatorio = {};
+            bancoVendas.forEach(v => {
+                const nome = v.colaborador;
+                if(!relatorio[nome]) relatorio[nome] = { pago: 0, pendente: 0, total: 0, vendas: 0 };
+                const devido = parseFloat(v.total_devido), pago = parseFloat(v.valor_pago || 0);
+                relatorio[nome].total += devido; 
+                relatorio[nome].pago += pago; 
+                relatorio[nome].pendente += (devido - pago);
+                relatorio[nome].vendas++;
+            });
+
+            let arr = Object.keys(relatorio).map(k => ({ nome: k, ...relatorio[k] }));
+            
+            // Aplicar filtros
+            if(filtroNome) {
+                arr = arr.filter(r => r.nome.toLowerCase().includes(filtroNome));
+            }
+            if(filtroStatus === 'pendente') {
+                arr = arr.filter(r => r.pendente > 0);
+            } else if(filtroStatus === 'pago') {
+                arr = arr.filter(r => r.pendente === 0);
+            }
+            
+            arr.sort((a,b) => b.total - a.total);
+            
+            const container = document.getElementById('containerFinanceiroCards');
+            if(arr.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center text-gray-400 py-12"><i class="fa-solid fa-inbox text-5xl mb-3"></i><p>Nenhum registro encontrado</p></div>`;
+                return;
+            }
+
+            container.innerHTML = arr.map(r => `
+                <div class="bg-white rounded-xl shadow-sm border-2 ${r.pendente > 0 ? 'border-red-200' : 'border-green-200'} p-6 hover:shadow-lg transition">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">${r.nome}</h3>
+                            <p class="text-sm text-gray-500">${r.vendas} vendas</p>
+                        </div>
+                        <span class="${r.pendente > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'} px-3 py-1 rounded-full text-xs font-bold">
+                            ${r.pendente > 0 ? 'PENDENTE' : 'QUITADO'}
+                        </span>
+                    </div>
+                    
+                    <div class="space-y-3 mb-4">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Total Faturado</span>
+                            <span class="font-bold text-gray-900">${formatarMoeda(r.total)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Recebido</span>
+                            <span class="font-bold text-green-600">${formatarMoeda(r.pago)}</span>
+                        </div>
+                        <div class="flex justify-between pt-2 border-t">
+                            <span class="text-gray-600 font-medium">Pendente</span>
+                            <span class="font-bold ${r.pendente > 0 ? 'text-red-600' : 'text-gray-400'}">${formatarMoeda(r.pendente)}</span>
+                        </div>
+                    </div>
+                    
+                    ${r.pendente > 0 ? `
+                        <button onclick="abrirModalPagamento('${r.nome}', ${r.pendente})" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition">
+                            <i class="fa-solid fa-money-bill mr-2"></i>Receber Pagamento
+                        </button>
+                    ` : `
+                        <div class="w-full bg-gray-100 text-gray-500 py-3 rounded-lg font-bold text-center">
+                            <i class="fa-solid fa-check-circle mr-2"></i>Tudo Pago
+                        </div>
+                    `}
+                </div>
+            `).join('');
+        }
+
+        // ==========================================
+        // RECIBO
+        // ==========================================
+        function atualizarListaClientesRecibo() {
+            const select = document.getElementById('reciboCliente');
+            const colabs = [...new Set(bancoVendas.map(v => v.colaborador))].sort();
+            select.innerHTML = '<option value="">Selecione...</option>' + colabs.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('areaRecibo').classList.add('hidden');
+        }
+
+        function carregarDadosRecibo() {
+            const cliente = document.getElementById('reciboCliente').value;
+            const periodo = document.getElementById('reciboPeriodo').value;
+            const areaRecibo = document.getElementById('areaRecibo');
+            const content = document.getElementById('reciboContent');
+            
+            if(!cliente) {
+                areaRecibo.classList.add('hidden');
+                return;
+            }
+            
+            const hoje = new Date();
+            let vendasFiltradas = bancoVendas.filter(v => v.colaborador === cliente);
+            
+            if(periodo === 'mes-atual') {
+                const mesAtual = hoje.getMonth();
+                const anoAtual = hoje.getFullYear();
+                vendasFiltradas = vendasFiltradas.filter(v => {
+                    const dv = new Date(v.data_venda);
+                    return dv.getMonth() === mesAtual && dv.getFullYear() === anoAtual;
+                });
+            } else if(periodo === 'semana-atual') {
+                const inicioSemana = obterInicioSemana(hoje);
+                const fimSemana = new Date(inicioSemana);
+                fimSemana.setDate(fimSemana.getDate() + 6);
+                vendasFiltradas = vendasFiltradas.filter(v => {
+                    const dv = new Date(v.data_venda);
+                    return dv >= inicioSemana && dv <= fimSemana;
+                });
+            }
+            
+            if(vendasFiltradas.length === 0) {
+                content.innerHTML = '<p class="text-center text-gray-500 py-8">Nenhuma venda encontrada para este período.</p>';
+                areaRecibo.classList.remove('hidden');
+                return;
+            }
+            
+            const totalGeral = vendasFiltradas.reduce((acc, v) => acc + parseFloat(v.total_devido), 0);
+            const totalPago = vendasFiltradas.reduce((acc, v) => acc + parseFloat(v.valor_pago || 0), 0);
+            const pendente = totalGeral - totalPago;
+            
+            content.innerHTML = `
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">RECIBO</h2>
+                    <p class="text-gray-600">Bombons Adriel & Cecilia</p>
+                    <p class="text-sm text-gray-500 mt-1">${new Date().toLocaleDateString('pt-BR')}</p>
+                </div>
+                
+                <div class="border-t-2 border-b-2 border-gray-300 py-4 mb-4">
+                    <p class="text-sm text-gray-600 mb-1">Cliente:</p>
+                    <p class="text-xl font-bold text-gray-900">${cliente}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 mb-2 font-bold">Vendas Detalhadas:</p>
+                    <div class="space-y-2">
+                        ${vendasFiltradas.map(v => `
+                            <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                <div>
+                                    <p class="font-bold text-gray-900">${formatarData(v.data_venda)}</p>
+                                    <p class="text-sm text-gray-500">${(v.itens_venda || []).map(i => `${i.qtd}x ${i.produto ? i.produto.nome : 'Item'}`).join(', ')}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-gray-900">${formatarMoeda(v.total_devido)}</p>
+                                    <p class="text-xs ${v.status.includes('PAGO') ? 'text-green-600' : 'text-red-600'}">${v.status.includes('PAGO') ? 'Pago' : 'Pendente'}</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4 space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Total Faturado:</span>
+                        <span class="font-bold text-gray-900">${formatarMoeda(totalGeral)}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Total Pago:</span>
+                        <span class="font-bold text-green-600">${formatarMoeda(totalPago)}</span>
+                    </div>
+                    <div class="flex justify-between pt-2 border-t border-gray-300">
+                        <span class="text-gray-900 font-bold">Saldo Pendente:</span>
+                        <span class="font-bold ${pendente > 0 ? 'text-red-600' : 'text-green-600'} text-xl">${formatarMoeda(pendente)}</span>
+                    </div>
+                </div>
+                
+                <div class="mt-8 text-center text-sm text-gray-500">
+                    <p>Obrigado pela preferência!</p>
+                    <p class="mt-1">Este recibo é um documento válido.</p>
+                </div>
+            `;
+            
+            areaRecibo.classList.remove('hidden');
+        }
+
+        function imprimirRecibo() {
+            const content = document.getElementById('reciboContent').innerHTML;
+            const win = window.open('', '', 'width=800,height=600');
+            win.document.write(`
+                <html>
+                <head>
+                    <title>Recibo</title>
+                    <script src="https://cdn.tailwindcss.com"><\/script>
+                </head>
+                <body class="p-8">
+                    ${content}
+                </body>
+                </html>
+            `);
+            win.document.close();
+            win.print();
+        }
+
+        function baixarReciboPDF() {
+            alertaSucesso('Funcionalidade de PDF em desenvolvimento. Use a impressão e salve como PDF.');
+            imprimirRecibo();
+        }
+
+        // ==========================================
         // ESTOQUE & ADICIONAR ESTOQUE DIÁRIO
         // ==========================================
         function renderizarEstoque() {
@@ -598,7 +1144,6 @@
             `).join('');
         }
 
-        // Modificado para aceitar uma Data, simulando adição diária
         function abrirModalProduto(id = null, dataAtribuida = null) {
             document.querySelector('#modalProduto form').reset();
             document.getElementById('prodDataAcao').value = dataAtribuida || new Date().toISOString().split('T')[0];
@@ -638,7 +1183,6 @@
 
             toggleLoading(true);
             try {
-                // Modificado para respeitar a nova constraint (nome e dono)
                 const existente = bancoProdutos.find(p => p.nome.trim().toLowerCase() === nome.toLowerCase() && p.id != id);
                 
                 let idParaLog = id;
@@ -657,7 +1201,6 @@
                     alertaSucesso('Novo produto no estoque!');
                 }
 
-                // Registra na tabela movimentacoes como ENTRADA
                 if(qtdAdicional > 0 && idParaLog) {
                     await supabaseClient.from('movimentacoes').insert([{
                         produto_id: idParaLog,
@@ -706,10 +1249,8 @@
 
             toggleLoading(true);
             try {
-                // Abate do estoque atual
                 await supabaseClient.rpc('decrement_product_qty', { prod_id: prodId, qty_to_remove: qtd });
                 
-                // Registra a Movimentação
                 await supabaseClient.from('movimentacoes').insert([{
                     produto_id: prodId,
                     dono: perfilAtual,
@@ -756,10 +1297,8 @@
             try {
                 const prodOrigem = bancoProdutos.find(p => p.id == prodIdOrigem);
                 
-                // 1. Tira do usuário atual
                 await supabaseClient.rpc('decrement_product_qty', { prod_id: prodOrigem.id, qty_to_remove: qtd });
                 
-                // Registra Saída
                 await supabaseClient.from('movimentacoes').insert([{
                     produto_id: prodOrigem.id,
                     dono: perfilAtual,
@@ -769,7 +1308,6 @@
                     dono_relacionado: destinoDono
                 }]);
 
-                // 2. Coloca no destino (verifica se ele já tem um produto com mesmo nome)
                 const produtosDestino = bancoGeralProdutos.filter(p => p.dono === destinoDono);
                 const existenteDestino = produtosDestino.find(p => p.nome.trim().toLowerCase() === prodOrigem.nome.trim().toLowerCase());
                 
@@ -787,7 +1325,6 @@
                     idDestino = nP[0].id;
                 }
 
-                // Registra Entrada no destino
                 await supabaseClient.from('movimentacoes').insert([{
                     produto_id: idDestino,
                     dono: destinoDono,
@@ -804,102 +1341,9 @@
             toggleLoading(false);
         }
 
-
         // ==========================================
-        // CONTROLE SEMANAL
+        // VENDAS (Funções mantidas)
         // ==========================================
-        function construirFiltroSemanas() {
-            const select = document.getElementById('filtroSemana');
-            select.innerHTML = '';
-            const setSemanas = new Set();
-            const atualIso = obterInicioSemana(new Date()).toISOString().split('T')[0];
-            setSemanas.add(atualIso);
-
-            bancoVendas.forEach(v => {
-                if(v.data_venda) setSemanas.add(obterInicioSemana(new Date(v.data_venda + 'T12:00:00')).toISOString().split('T')[0]);
-            });
-
-            Array.from(setSemanas).sort((a,b) => new Date(b) - new Date(a)).forEach(isoStr => {
-                const [y, m, d] = isoStr.split('-');
-                const start = new Date(y, m - 1, d);
-                const end = new Date(start); end.setDate(end.getDate() + 6);
-                const option = document.createElement('option');
-                option.value = isoStr;
-                option.innerText = isoStr === atualIso ? `Atual (${start.toLocaleDateString('pt-BR')})` : `${start.toLocaleDateString('pt-BR')} até ${end.toLocaleDateString('pt-BR')}`;
-                select.appendChild(option);
-            });
-        }
-
-        function carregarVisaoSemanal() {
-            const isoStr = document.getElementById('filtroSemana').value;
-            if(!isoStr) return;
-            const [y, m, d] = isoStr.split('-');
-            const semanaStart = new Date(y, m - 1, d, 0,0,0);
-            const semanaEnd = new Date(semanaStart); semanaEnd.setDate(semanaEnd.getDate() + 6); semanaEnd.setHours(23,59,59);
-
-            const vendasDaSemana = bancoVendas.filter(v => {
-                const vd = new Date(v.data_venda + 'T12:00:00');
-                return vd >= semanaStart && vd <= semanaEnd;
-            });
-
-            const diasUteis = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
-            const container = document.getElementById('containerDiasSemana');
-            container.innerHTML = '';
-
-            for(let i=0; i<5; i++) {
-                const diaAtual = new Date(semanaStart); diaAtual.setDate(diaAtual.getDate() + i);
-                const isoDia = diaAtual.toISOString().split('T')[0];
-                const vendasDoDia = vendasDaSemana.filter(v => v.data_venda === isoDia);
-                let conteudoHTML = '';
-                
-                if(vendasDoDia.length === 0) {
-                    conteudoHTML = `<p class="p-4 text-center text-gray-400 italic text-sm">Nenhuma venda registrada.</p>`;
-                } else {
-                    conteudoHTML = `<div class="divide-y divide-gray-100">`;
-                    vendasDoDia.forEach(v => {
-                        const dev = parseFloat(v.total_devido);
-                        const pg = parseFloat(v.valor_pago || 0);
-                        let badgeStatus = (pg >= dev && dev > 0) ? `<span class="bg-green-100 text-green-800 text-[10px] px-2 py-1 rounded font-bold">PAGO</span>` : `<span class="bg-red-100 text-red-800 text-[10px] px-2 py-1 rounded font-bold">Pendente</span>`;
-                        const listaItens = (v.itens_venda || []).map(iv => `<span class="inline-block bg-gray-100 border rounded px-2 py-1 text-xs font-semibold mr-1 mb-1">${iv.qtd}x ${iv.produto ? iv.produto.nome : 'Deletado'}</span>`).join('');
-
-                        conteudoHTML += `
-                            <div class="p-4 hover:bg-gray-50 flex flex-col md:flex-row justify-between md:items-center">
-                                <div>
-                                    <h4 class="font-bold text-gray-900 text-lg">${v.colaborador} <span class="ml-2 align-middle">${badgeStatus}</span></h4>
-                                    <div class="mt-2">${listaItens}</div>
-                                </div>
-                                <div class="mt-3 md:mt-0 text-right flex items-center justify-end space-x-4 border-t md:border-t-0 pt-3 md:pt-0">
-                                    <span class="font-bold text-xl">${formatarMoeda(dev)}</span>
-                                    <div>
-                                        <button onclick="abrirModalVenda(${v.id})" class="text-blue-600 p-2"><i class="fa-solid fa-pen"></i></button>
-                                        <button onclick="deletarVenda(${v.id})" class="text-red-500 hover:text-red-700 p-2"><i class="fa-solid fa-trash"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    conteudoHTML += `</div>`;
-                }
-
-                container.innerHTML += `
-                    <div class="flex flex-col md:flex-row bg-white rounded-xl shadow-sm border overflow-hidden mb-6">
-                        <div class="bg-gray-900 w-full md:w-12 py-1.5 md:py-0 flex items-center justify-center relative shrink-0">
-                            <span class="text-xs font-bold text-white uppercase tracking-widest md:vertical-text md:absolute">${diasUteis[i]}</span>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="bg-gray-50 border-b px-4 py-2 flex justify-between items-center">
-                                <span class="text-sm font-semibold text-gray-500">${formatarData(isoDia)}</span>
-                                <!-- AQUI ESTÁ A ALTERAÇÃO: O botão Add agora chama abrirModalProduto passando o dia -->
-                                <button onclick="abrirModalProduto(null, '${isoDia}')" class="text-xs bg-gray-900 text-white px-2 py-1 rounded font-bold hover:bg-gray-800">+ Add Estoque</button>
-                            </div>
-                            <div>${conteudoHTML}</div>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        // Restante das funções de Venda permanecem inalteradas, mas ocultadas por brevidade. Apenas copiei as partes exatas de venda.
         function abrirModalVenda(idVenda = null) {
             document.getElementById('containerItensVenda').innerHTML = '';
             if(idVenda) {
@@ -1030,7 +1474,7 @@
         }
 
         // ==========================================
-        // DASHBOARD E FINANCEIRO (Inalterados logicamente)
+        // DASHBOARD
         // ==========================================
         function renderizarDashboard() {
             const dataAtual = new Date();
@@ -1062,32 +1506,9 @@
             document.getElementById('dashValEstoque').innerText = formatarMoeda(valEstoque);
         }
 
-        function renderizarFinanceiro() {
-            const relatorio = {};
-            bancoVendas.forEach(v => {
-                const nome = v.colaborador;
-                if(!relatorio[nome]) relatorio[nome] = { pago: 0, pendente: 0, total: 0 };
-                const devido = parseFloat(v.total_devido), pago = parseFloat(v.valor_pago || 0);
-                relatorio[nome].total += devido; relatorio[nome].pago += pago; relatorio[nome].pendente += (devido - pago);
-            });
-
-            const arr = Object.keys(relatorio).map(k => ({ nome: k, ...relatorio[k] })).sort((a,b) => b.total - a.total);
-            const tbody = document.getElementById('tabelaFinanceiro');
-            if(arr.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-400">Sem dados.</td></tr>`;
-
-            tbody.innerHTML = arr.map(r => `
-                <tr class="hover:bg-gray-50 border-b border-gray-100">
-                    <td class="p-4 font-bold text-gray-900">${r.nome}</td>
-                    <td class="p-4 font-bold text-green-600">${formatarMoeda(r.pago)}</td>
-                    <td class="p-4 font-bold ${r.pendente > 0 ? 'text-red-600' : 'text-gray-400'}">${formatarMoeda(r.pendente)}</td>
-                    <td class="p-4 font-bold text-blue-600">${formatarMoeda(r.total)}</td>
-                    <td class="p-4 text-center">
-                        ${r.pendente > 0 ? `<button onclick="abrirModalPagamento('${r.nome}', ${r.pendente})" class="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-bold hover:bg-green-200">Receber</button>` : `<span class="text-xs text-gray-400 font-bold">OK</span>`}
-                    </td>
-                </tr>
-            `).join('');
-        }
-
+        // ==========================================
+        // PAGAMENTO
+        // ==========================================
         function abrirModalPagamento(n, d) {
             document.getElementById('pagColabNome').innerText = n;
             document.getElementById('pagFaltaView').innerText = formatarMoeda(d);
@@ -1122,7 +1543,7 @@
         }
 
         // ==========================================
-        // RELATÓRIOS GERAIS MENSAL (FECHAMENTO) E HISTÓRICO
+        // RELATÓRIOS - FECHAMENTOS MENSAL
         // ==========================================
         function obterMesesDisponiveis() {
             const meses = new Set();
@@ -1158,97 +1579,6 @@
             }).join('');
         }
 
-            async function renderizarPastasHistoricoSaldos() {
-                const container = document.getElementById('gridPastasSaldos');
-                const semanas = new Set();
-                
-                // Identifica todas as semanas existentes
-                bancoGeralMovimentacoes.forEach(m => {
-                    if(m.data_movimento && m.dono === perfilAtual) {
-                        semanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
-                    }
-                });
-            
-                container.innerHTML = '';
-                
-                for (const semanaIso of Array.from(semanas).sort((a, b) => b.localeCompare(a))) {
-                    const [y, m, d] = semanaIso.split('-');
-                    const desc = new Date(y, m - 1, d).toLocaleDateString('pt-BR');
-            
-                    const card = document.createElement('div');
-                    card.className = "bg-white border border-gray-200 rounded-2xl p-6 shadow-sm";
-                    card.innerHTML = `
-                        <div class="flex items-center justify-between mb-4 border-b pb-3">
-                            <div class="flex items-center">
-                                <i class="fa-solid fa-folder-open text-indigo-400 mr-3"></i>
-                                <h4 class="font-bold text-gray-800">Semana: ${desc}</h4>
-                            </div>
-                        </div>
-                        <div id="conteudo-semana-${semanaIso}" class="space-y-2 mb-4">
-                            <p class="text-xs text-gray-400 italic">Carregando saldo acumulado...</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="abrirModalTransferencia('${semanaIso}')" class="flex-1 bg-blue-50 text-blue-700 py-2 rounded-lg font-bold text-xs hover:bg-blue-100">Transferir</button>
-                            <button onclick="abrirModalConsumo('${semanaIso}')" class="flex-1 bg-orange-50 text-orange-700 py-2 rounded-lg font-bold text-xs hover:bg-orange-100">Consumir</button>
-                        </div>
-                    `;
-                    container.appendChild(card);
-            
-                    // A MÁGICA: Buscar saldo de TODOS os produtos até o fim desta semana
-                    let htmlProdutos = '';
-                    for (const p of bancoProdutos) {
-                        // Buscamos o saldo final (Entradas - Saídas de todo o período até esta semana)
-                        const { data: saldoTotal } = await supabaseClient
-                            .rpc('calcular_saldo_acumulado', { prod_id: p.id, data_limite: semanaIso });
-                        
-                        const saldoFinal = saldoTotal || 0; 
-                        if (saldoFinal > 0) {
-                            htmlProdutos += `
-                                <div class="flex justify-between text-sm py-1 border-b border-gray-50">
-                                    <span class="text-gray-600">${p.nome}</span>
-                                    <span class="font-bold text-indigo-600">${saldoFinal} un</span>
-                                </div>`;
-                        }
-                    }
-                    document.getElementById(`conteudo-semana-${semanaIso}`).innerHTML = htmlProdutos || '<p class="text-xs text-gray-400">Sem estoque neste período.</p>';
-                }
-            }
-        // ==========================================
-        // FILTRO DE SEMANAS CORRIGIDO
-        // ==========================================
-        function construirFiltroSemanas() {
-            const select = document.getElementById('filtroSemana');
-            select.innerHTML = '';
-            const setSemanas = new Set();
-            const atualIso = obterInicioSemana(new Date()).toISOString().split('T')[0];
-            setSemanas.add(atualIso);
-
-            // Busca semanas que tiveram vendas
-            bancoVendas.forEach(v => {
-                if(v.data_venda) setSemanas.add(obterInicioSemana(new Date(v.data_venda + 'T12:00:00')).toISOString().split('T')[0]);
-            });
-
-            // NOVO: Busca semanas que tiveram adição de estoque/movimentações
-            bancoGeralMovimentacoes.forEach(m => {
-                if(m.data_movimento && m.dono === perfilAtual) {
-                    setSemanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
-                }
-            });
-
-            Array.from(setSemanas).sort((a,b) => new Date(b) - new Date(a)).forEach(isoStr => {
-                const [y, m, d] = isoStr.split('-');
-                const start = new Date(y, m - 1, d);
-                const end = new Date(start); end.setDate(end.getDate() + 6);
-                const option = document.createElement('option');
-                option.value = isoStr;
-                option.innerText = isoStr === atualIso ? `Atual (${start.toLocaleDateString('pt-BR')})` : `${start.toLocaleDateString('pt-BR')} até ${end.toLocaleDateString('pt-BR')}`;
-                select.appendChild(option);
-            });
-        }
-
-        // ==========================================
-        // FUNÇÃO DE ABRIR O RELATÓRIO MENSAL (QUE FALTAVA)
-        // ==========================================
         function abrirRelatorioMes(mesIso, nomePasta) {
             document.getElementById('tituloMesRelatorio').innerText = `Fechamento: ${nomePasta}`;
             
@@ -1290,6 +1620,166 @@
 
             document.getElementById('modalRelatorioMes').classList.remove('hidden');
         }
+
+        // ==========================================
+        // RELATÓRIOS - HISTÓRICO DE SALDOS (NOVO)
+        // ==========================================
+        async function renderizarPastasHistoricoSaldos() {
+            const container = document.getElementById('gridPastasSaldos');
+            const semanas = new Set();
+            
+            bancoGeralMovimentacoes.forEach(m => {
+                if(m.data_movimento) {
+                    semanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
+                }
+            });
+        
+            container.innerHTML = '';
+            
+            if(semanas.size === 0) {
+                container.innerHTML = '<p class="col-span-full text-center text-gray-400 py-8">Nenhuma movimentação registrada.</p>';
+                return;
+            }
+            
+            for (const semanaIso of Array.from(semanas).sort((a, b) => b.localeCompare(a))) {
+                const [y, m, d] = semanaIso.split('-');
+                const desc = new Date(y, m - 1, d).toLocaleDateString('pt-BR');
+                const fimSemana = new Date(y, m - 1, parseInt(d) + 6);
+                const descFim = fimSemana.toLocaleDateString('pt-BR');
+        
+                const card = document.createElement('div');
+                card.className = "bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition cursor-pointer";
+                card.onclick = () => abrirHistoricoSaldoDetalhado(semanaIso);
+                card.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        <i class="fa-solid fa-folder-open text-6xl text-indigo-400 mb-3"></i>
+                        <h4 class="font-bold text-indigo-900 text-center mb-1">Semana</h4>
+                        <p class="text-sm text-indigo-700 text-center font-medium">${desc} a ${descFim}</p>
+                        <div class="mt-3 flex gap-2">
+                            <span class="bg-white px-2 py-1 rounded text-xs font-bold text-indigo-600 border border-indigo-200">Ver Detalhes</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+
+        async function abrirHistoricoSaldoDetalhado(semanaIso) {
+            semanaHistoricoSelecionada = semanaIso;
+            const [y, m, d] = semanaIso.split('-');
+            const inicioSemana = new Date(y, m - 1, parseInt(d));
+            const fimSemana = new Date(inicioSemana);
+            fimSemana.setDate(fimSemana.getDate() + 6);
+            
+            document.getElementById('tituloHistoricoSaldo').innerText = `Semana de ${inicioSemana.toLocaleDateString('pt-BR')} a ${fimSemana.toLocaleDateString('pt-BR')}`;
+            
+            // Buscar movimentações da semana
+            const movimentacoesSemana = bancoGeralMovimentacoes.filter(m => {
+                if(!m.data_movimento || m.dono !== perfilAtual) return false;
+                const dm = new Date(m.data_movimento + 'T12:00:00');
+                return dm >= inicioSemana && dm <= fimSemana;
+            });
+            
+            // Calcular saldo final de cada produto
+            const saldosFinais = {};
+            bancoProdutos.forEach(p => {
+                saldosFinais[p.nome] = { qtd: 0, produto: p };
+            });
+            
+            // Somar todas as entradas e subtrair saídas até o fim da semana
+            const todasMovs = bancoGeralMovimentacoes.filter(m => {
+                if(!m.data_movimento || m.dono !== perfilAtual) return false;
+                const dm = new Date(m.data_movimento + 'T12:00:00');
+                return dm <= fimSemana;
+            });
+            
+            todasMovs.forEach(m => {
+                const prod = bancoGeralProdutos.find(p => p.id === m.produto_id);
+                if(!prod) return;
+                
+                if(!saldosFinais[prod.nome]) {
+                    saldosFinais[prod.nome] = { qtd: 0, produto: prod };
+                }
+                
+                if(m.tipo === 'ENTRADA' || m.tipo === 'TRANSFERENCIA_ENTRADA') {
+                    saldosFinais[prod.nome].qtd += m.qtd;
+                } else if(m.tipo === 'SAIDA' || m.tipo === 'CONSUMO' || m.tipo === 'TRANSFERENCIA_SAIDA') {
+                    saldosFinais[prod.nome].qtd -= m.qtd;
+                }
+            });
+            
+            // Renderizar saldo final
+            const listaSaldo = document.getElementById('listaSaldoFinal');
+            const saldosComValor = Object.values(saldosFinais).filter(s => s.qtd > 0);
+            if(saldosComValor.length === 0) {
+                listaSaldo.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">Sem saldo</p>';
+            } else {
+                listaSaldo.innerHTML = saldosComValor.map(s => `
+                    <div class="bg-white rounded-lg p-3 border border-indigo-200">
+                        <p class="font-bold text-gray-900 text-sm">${s.produto.nome}</p>
+                        <p class="text-indigo-600 font-bold">${s.qtd} un</p>
+                    </div>
+                `).join('');
+            }
+            
+            // Renderizar consumos
+            const consumos = movimentacoesSemana.filter(m => m.tipo === 'CONSUMO');
+            const listaConsumos = document.getElementById('listaConsumos');
+            if(consumos.length === 0) {
+                listaConsumos.innerHTML = '<p class="text-gray-400 text-sm italic">Nenhum consumo registrado</p>';
+            } else {
+                listaConsumos.innerHTML = consumos.map(c => {
+                    const prod = bancoGeralProdutos.find(p => p.id === c.produto_id);
+                    return `
+                        <div class="bg-white rounded-lg p-3 border border-orange-200 flex justify-between items-center">
+                            <div>
+                                <p class="font-bold text-gray-900">${prod ? prod.nome : 'Produto deletado'}</p>
+                                <p class="text-xs text-gray-500">${formatarData(c.data_movimento)}</p>
+                            </div>
+                            <span class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm font-bold">${c.qtd} un</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // Renderizar transferências
+            const transferencias = movimentacoesSemana.filter(m => m.tipo === 'TRANSFERENCIA_SAIDA' || m.tipo === 'TRANSFERENCIA_ENTRADA');
+            const listaTransf = document.getElementById('listaTransferencias');
+            if(transferencias.length === 0) {
+                listaTransf.innerHTML = '<p class="text-gray-400 text-sm italic">Nenhuma transferência registrada</p>';
+            } else {
+                listaTransf.innerHTML = transferencias.map(t => {
+                    const prod = bancoGeralProdutos.find(p => p.id === t.produto_id);
+                    const ehSaida = t.tipo === 'TRANSFERENCIA_SAIDA';
+                    return `
+                        <div class="bg-white rounded-lg p-3 border border-blue-200 flex justify-between items-center">
+                            <div>
+                                <p class="font-bold text-gray-900">${prod ? prod.nome : 'Produto deletado'}</p>
+                                <p class="text-xs text-gray-500">${ehSaida ? 'Enviado para' : 'Recebido de'}: <span class="font-bold">${t.dono_relacionado}</span></p>
+                                <p class="text-xs text-gray-500">${formatarData(t.data_movimento)}</p>
+                            </div>
+                            <span class="${ehSaida ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'} px-2 py-1 rounded text-sm font-bold">
+                                ${ehSaida ? '-' : '+'}${t.qtd} un
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            document.getElementById('modalHistoricoSaldo').classList.remove('hidden');
+        }
+
+        function acaoTransferirDaSemana() {
+            fecharModal('modalHistoricoSaldo');
+            setTimeout(() => abrirModalTransferencia(), 300);
+        }
+
+        function acaoConsumirDaSemana() {
+            fecharModal('modalHistoricoSaldo');
+            setTimeout(() => abrirModalConsumo(), 300);
+        }
+
+        // INICIALIZAÇÃO
         window.onload = () => {
             sincronizarBanco();
         };
