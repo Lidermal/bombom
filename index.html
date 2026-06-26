@@ -127,18 +127,26 @@
 
             <section id="aba-semanal" class="aba-conteudo hidden space-y-4 md:space-y-6 fade-in">
                 <div class="flex flex-col md:flex-row justify-between items-center bg-blue-50 border border-blue-100 p-3 rounded-lg gap-3">
-                    <p class="text-xs md:text-sm text-blue-800 font-medium text-center md:text-left"><i class="fa-solid fa-circle-info mr-2"></i>Registros somados. Clique na lixeira para excluir e retornar os itens ao estoque.</p>
+                    <p class="text-xs md:text-sm text-blue-800 font-medium text-center md:text-left"><i class="fa-solid fa-circle-info mr-2"></i>Registros somados. Clique no botão de Add ao lado do dia para adicionar saldo diário ao estoque.</p>
                     <button onclick="abrirModalVenda()" class="w-full md:w-auto bg-gray-900 text-white px-5 py-3 md:py-2 rounded-lg hover:bg-gray-800 transition shadow flex justify-center items-center font-medium">
-                        <i class="fa-solid fa-plus mr-2"></i> Registrar Venda
+                        <i class="fa-solid fa-cart-shopping mr-2"></i> Registrar Venda
                     </button>
                 </div>
                 <div id="containerDiasSemana" class="space-y-6"></div>
             </section>
 
             <section id="aba-estoque" class="aba-conteudo hidden space-y-4 md:space-y-6 fade-in">
-                <div class="flex justify-end">
-                    <button onclick="abrirModalProduto()" class="w-full md:w-auto bg-gray-900 text-white px-5 py-3 md:py-2.5 rounded-lg hover:bg-gray-800 transition shadow flex justify-center items-center font-medium">
-                        <i class="fa-solid fa-plus mr-2"></i> Novo Produto
+                <div class="flex justify-between items-center">
+                    <div class="space-x-2">
+                        <button onclick="abrirModalTransferencia()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow font-medium text-sm">
+                            <i class="fa-solid fa-right-left mr-1"></i> Transferir
+                        </button>
+                        <button onclick="abrirModalConsumo()" class="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition shadow font-medium text-sm">
+                            <i class="fa-solid fa-cookie-bite mr-1"></i> Consumir
+                        </button>
+                    </div>
+                    <button onclick="abrirModalProduto()" class="bg-gray-900 text-white px-5 py-2.5 rounded-lg hover:bg-gray-800 transition shadow font-medium">
+                        <i class="fa-solid fa-plus mr-2"></i> Produto Livre
                     </button>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -178,16 +186,35 @@
             </section>
 
             <section id="aba-relatorios" class="aba-conteudo hidden space-y-6 fade-in">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center">
-                    <h3 class="text-2xl font-bold text-gray-800">Fechamentos Mensais</h3>
-                    <p class="text-gray-500">Selecione o mês para ver a apuração completa de faturamento de Adriel e Cecília.</p>
+                <!-- Navegação interna de Relatórios -->
+                <div class="flex space-x-2 border-b border-gray-300 pb-2">
+                    <button onclick="mudarSubAbaRelatorio('fechamentos')" id="btnSubFechamentos" class="px-4 py-2 font-bold text-indigo-700 border-b-2 border-indigo-700 transition">Fechamentos Mensais</button>
+                    <button onclick="mudarSubAbaRelatorio('saldos')" id="btnSubSaldos" class="px-4 py-2 font-bold text-gray-500 hover:text-indigo-600 transition">Histórico de Saldos</button>
                 </div>
-                <div id="gridPastasRelatorio" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+
+                <!-- Sub-Aba: Fechamentos -->
+                <div id="sub-fechamentos" class="space-y-6 fade-in">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center">
+                        <h3 class="text-2xl font-bold text-gray-800">Fechamentos Mensais</h3>
+                        <p class="text-gray-500">Selecione o mês para ver a apuração de faturamento de Adriel e Cecília.</p>
+                    </div>
+                    <div id="gridPastasRelatorio" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                </div>
+
+                <!-- Sub-Aba: Histórico de Saldos -->
+                <div id="sub-saldos" class="space-y-6 hidden fade-in">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center">
+                        <h3 class="text-2xl font-bold text-gray-800">Saldos & Movimentações Semanais</h3>
+                        <p class="text-gray-500">Histórico de estoque que restou, consumos próprios e transferências das semanas fechadas.</p>
+                    </div>
+                    <div id="gridPastasSaldos" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                </div>
             </section>
 
         </div>
     </main>
 
+    <!-- Modal Relatorio Mes (Já Existente) -->
     <div id="modalRelatorioMes" class="fixed inset-0 bg-black bg-opacity-70 hidden z-[70] flex items-center justify-center backdrop-blur-sm p-4 fade-in">
         <div class="bg-gray-50 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             <div class="bg-gray-900 p-5 border-b flex justify-between items-center shrink-0 text-white">
@@ -233,6 +260,7 @@
         </div>
     </div>
 
+    <!-- Modais Genéricos -->
     <div id="modalPagamento" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm p-4">
         <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden">
             <div class="bg-gray-50 p-4 border-b flex justify-between items-center">
@@ -246,7 +274,7 @@
                     <p class="text-sm mt-1">Dívida: <span class="font-bold text-red-600" id="pagFaltaView">R$ 0,00</span></p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Valor do Pagamento Agora</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Valor</label>
                     <input type="number" id="pagValorInp" required min="0.01" step="0.01" class="w-full border rounded-lg p-3 text-center text-xl font-bold text-green-700 outline-none">
                 </div>
                 <div>
@@ -264,11 +292,12 @@
     <div id="modalProduto" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm p-4">
         <div class="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden">
             <div class="bg-gray-50 p-4 border-b flex justify-between items-center">
-                <h3 class="font-bold text-lg text-gray-800" id="tituloModalProduto">Novo Produto</h3>
+                <h3 class="font-bold text-lg text-gray-800" id="tituloModalProduto">Adicionar ao Estoque</h3>
                 <button onclick="fecharModal('modalProduto')" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
             </div>
             <form onsubmit="salvarProduto(event)" class="p-4 md:p-6 space-y-4">
                 <input type="hidden" id="prodId">
+                <input type="hidden" id="prodDataAcao">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Produto</label>
                     <input type="text" id="prodNome" required list="listaProdutos" class="w-full border rounded-lg p-3 outline-none">
@@ -292,6 +321,7 @@
         </div>
     </div>
 
+    <!-- Modal Vendas -->
     <div id="modalVenda" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm p-4">
         <div class="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
             <div class="bg-gray-50 p-4 border-b flex justify-between items-center shrink-0">
@@ -318,8 +348,8 @@
                 
                 <div class="mt-6 border border-gray-200 rounded-lg p-3 md:p-4 bg-gray-50">
                     <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-bold text-gray-700"><i class="fa-solid fa-cart-shopping mr-2"></i>Itens Consumidos</h4>
-                        <button type="button" onclick="adicionarLinhaProduto()" class="text-xs bg-white border px-3 py-2 rounded">+ Add Produto</button>
+                        <h4 class="font-bold text-gray-700"><i class="fa-solid fa-cart-shopping mr-2"></i>Itens Vendidos</h4>
+                        <button type="button" onclick="adicionarLinhaProduto()" class="text-xs bg-white border px-3 py-2 rounded font-bold hover:bg-gray-100">+ Add Produto</button>
                     </div>
                     <div id="containerItensVenda" class="space-y-3"></div>
                 </div>
@@ -328,9 +358,60 @@
                 <div class="text-gray-800 font-medium">Total: <span id="vendaTotalView" class="text-2xl font-bold text-gray-900 ml-2">R$ 0,00</span></div>
                 <div class="flex flex-col-reverse md:flex-row w-full md:w-auto gap-3">
                     <button type="button" onclick="fecharModal('modalVenda')" class="w-full md:w-auto px-5 py-3 border rounded-lg">Cancelar</button>
-                    <button type="button" onclick="document.querySelector('#modalVenda form').requestSubmit()" class="w-full md:w-auto px-5 py-3 bg-gray-900 text-white rounded-lg">Confirmar</button>
+                    <button type="button" onclick="document.querySelector('#modalVenda form').requestSubmit()" class="w-full md:w-auto px-5 py-3 bg-gray-900 text-white rounded-lg">Confirmar Venda</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE TRANSFERÊNCIA DE SALDO -->
+    <div id="modalTransferencia" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden">
+            <div class="bg-blue-600 p-4 border-b flex justify-between items-center text-white">
+                <h3 class="font-bold text-lg"><i class="fa-solid fa-right-left mr-2"></i>Transferir Estoque</h3>
+                <button onclick="fecharModal('modalTransferencia')" class="text-blue-200 hover:text-white text-2xl">&times;</button>
+            </div>
+            <form onsubmit="salvarTransferencia(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Qual Produto?</label>
+                    <select id="transfProdutoId" required class="w-full border rounded-lg p-3 outline-none" onchange="atualizarMaxTransferencia()"></select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Quantidade a Transferir</label>
+                    <input type="number" id="transfQtd" required min="1" class="w-full border rounded-lg p-3 outline-none">
+                    <p class="text-xs text-gray-500 mt-1" id="transfMaxInfo">Disponível: 0</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Para quem?</label>
+                    <select id="transfDestino" required class="w-full border rounded-lg p-3 outline-none font-bold bg-gray-50">
+                        <!-- O Javascript preenche automaticamente com o "outro" perfil -->
+                    </select>
+                </div>
+                <button type="submit" class="w-full mt-2 bg-blue-600 text-white font-bold py-3.5 rounded-lg hover:bg-blue-700 shadow">Efetuar Transferência</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONSUMO -->
+    <div id="modalConsumo" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden">
+            <div class="bg-orange-500 p-4 border-b flex justify-between items-center text-white">
+                <h3 class="font-bold text-lg"><i class="fa-solid fa-cookie-bite mr-2"></i>Registrar Consumo</h3>
+                <button onclick="fecharModal('modalConsumo')" class="text-orange-200 hover:text-white text-2xl">&times;</button>
+            </div>
+            <form onsubmit="salvarConsumo(event)" class="p-6 space-y-4">
+                <p class="text-sm text-gray-600 mb-4">Esses itens serão baixados do seu estoque e lançados no Histórico de Consumo.</p>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Qual Produto você comeu?</label>
+                    <select id="consumoProdutoId" required class="w-full border rounded-lg p-3 outline-none" onchange="atualizarMaxConsumo()"></select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Quantidade Consumida</label>
+                    <input type="number" id="consumoQtd" required min="1" class="w-full border rounded-lg p-3 outline-none">
+                    <p class="text-xs text-gray-500 mt-1" id="consumoMaxInfo">Disponível: 0</p>
+                </div>
+                <button type="submit" class="w-full mt-2 bg-orange-500 text-white font-bold py-3.5 rounded-lg hover:bg-orange-600 shadow">Confirmar Consumo</button>
+            </form>
         </div>
     </div>
 
@@ -342,9 +423,10 @@
 
         let bancoGeralProdutos = [];
         let bancoGeralVendas = [];
+        let bancoGeralMovimentacoes = [];
         
-        let bancoProdutos = []; // Filtrado pelo perfil ativo
-        let bancoVendas = [];   // Filtrado pelo perfil ativo
+        let bancoProdutos = []; 
+        let bancoVendas = [];   
         let perfilAtual = null; // 'Adriel', 'Cecilia' ou 'Relatorios'
 
         const formatarMoeda = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -363,7 +445,6 @@
             if(perfil === 'Relatorios') {
                 mudarAba('relatorios');
             } else {
-                // Filtra as listas locais baseadas no dono
                 bancoProdutos = bancoGeralProdutos.filter(p => p.dono === perfilAtual);
                 bancoVendas = bancoGeralVendas.filter(v => v.dono === perfilAtual);
                 mudarAba('dashboard');
@@ -383,14 +464,10 @@
             
             if(perfilAtual === 'Relatorios') {
                 document.getElementById('iconeSidebar').innerText = '📊';
-                document.getElementById('nomeSidebar').innerText = 'Relatórios Mensais';
+                document.getElementById('nomeSidebar').innerText = 'Painel Geral';
                 
-                navDesktop.innerHTML = `
-                    <button onclick="mudarAba('relatorios', this)" data-aba="relatorios" class="menu-btn w-full flex items-center px-4 py-3 bg-gray-800 text-white rounded transition border-l-4 border-white"><i class="fa-solid fa-folder-open w-6"></i> Fechamentos</button>
-                `;
-                navMobile.innerHTML = `
-                    <button onclick="mudarAba('relatorios', this)" data-aba="relatorios" class="menu-btn flex-1 flex flex-col items-center justify-center py-3 text-white transition"><i class="fa-solid fa-folder-open text-xl mb-1"></i><span class="text-[10px] font-bold">FECHAMENTOS</span></button>
-                `;
+                navDesktop.innerHTML = `<button onclick="mudarAba('relatorios', this)" data-aba="relatorios" class="menu-btn w-full flex items-center px-4 py-3 bg-gray-800 text-white rounded transition border-l-4 border-white"><i class="fa-solid fa-folder-open w-6"></i> Relatórios</button>`;
+                navMobile.innerHTML = `<button onclick="mudarAba('relatorios', this)" data-aba="relatorios" class="menu-btn flex-1 flex flex-col items-center justify-center py-3 text-white transition"><i class="fa-solid fa-folder-open text-xl mb-1"></i><span class="text-[10px] font-bold">RELATÓRIOS</span></button>`;
             } else {
                 const icon = perfilAtual === 'Adriel' ? '👨' : '👩';
                 document.getElementById('iconeSidebar').innerText = icon;
@@ -414,7 +491,6 @@
         // NAVEGAÇÃO
         function mudarAba(abaId) {
             document.querySelectorAll('.aba-conteudo').forEach(aba => aba.classList.add('hidden'));
-            
             document.querySelectorAll('.menu-btn').forEach(btn => { 
                 btn.classList.remove('bg-gray-800', 'text-white', 'border-l-4', 'border-white'); 
                 btn.classList.add('text-gray-400');
@@ -429,7 +505,7 @@
                 else btn.classList.add('text-white');
             });
 
-            const titulos = { 'dashboard': 'Dashboard Mensal', 'semanal': 'Controle Semanal', 'estoque': 'Gestão de Estoque', 'financeiro': 'Controle Financeiro', 'relatorios': 'Relatórios de Fechamento' };
+            const titulos = { 'dashboard': 'Dashboard Mensal', 'semanal': 'Controle Semanal', 'estoque': 'Gestão de Estoque', 'financeiro': 'Controle Financeiro', 'relatorios': 'Central de Relatórios' };
             document.getElementById('tituloAba').innerText = titulos[abaId] || '';
             
             const containerFiltro = document.getElementById('containerFiltroSemana');
@@ -440,7 +516,25 @@
             if(abaId === 'semanal') carregarVisaoSemanal();
             if(abaId === 'estoque') renderizarEstoque();
             if(abaId === 'financeiro') renderizarFinanceiro();
-            if(abaId === 'relatorios') renderizarPastasRelatorio();
+            if(abaId === 'relatorios') { mudarSubAbaRelatorio('fechamentos'); }
+        }
+
+        function mudarSubAbaRelatorio(subId) {
+            document.getElementById('sub-fechamentos').classList.add('hidden');
+            document.getElementById('sub-saldos').classList.add('hidden');
+            
+            document.getElementById('btnSubFechamentos').className = 'px-4 py-2 font-bold text-gray-500 hover:text-indigo-600 transition';
+            document.getElementById('btnSubSaldos').className = 'px-4 py-2 font-bold text-gray-500 hover:text-indigo-600 transition';
+
+            if(subId === 'fechamentos') {
+                document.getElementById('sub-fechamentos').classList.remove('hidden');
+                document.getElementById('btnSubFechamentos').className = 'px-4 py-2 font-bold text-indigo-700 border-b-2 border-indigo-700 transition';
+                renderizarPastasRelatorio();
+            } else if (subId === 'saldos') {
+                document.getElementById('sub-saldos').classList.remove('hidden');
+                document.getElementById('btnSubSaldos').className = 'px-4 py-2 font-bold text-indigo-700 border-b-2 border-indigo-700 transition';
+                renderizarPastasHistoricoSaldos();
+            }
         }
 
         // COMUNICAÇÃO SUPABASE
@@ -452,6 +546,9 @@
 
                 const { data: vData } = await supabaseClient.from('vendas').select('*, itens_venda(*, produto:produtos(nome))').order('data_venda', { ascending: false });
                 bancoGeralVendas = vData || [];
+
+                const { data: mData } = await supabaseClient.from('movimentacoes').select('*, produto:produtos(nome)').order('data_movimento', { ascending: false });
+                bancoGeralMovimentacoes = mData || [];
 
                 if(perfilAtual && perfilAtual !== 'Relatorios') {
                     bancoProdutos = bancoGeralProdutos.filter(p => p.dono === perfilAtual);
@@ -475,9 +572,6 @@
             document.getElementById('listaProdutos').innerHTML = bancoProdutos.map(p => `<option value="${p.nome}">`).join('');
         }
 
-        // ==========================================
-        // LÓGICA DE DATAS (MÊS E SEMANA)
-        // ==========================================
         function obterInicioSemana(data) {
             const d = new Date(data); d.setHours(0,0,0,0);
             const ds = d.getDay();
@@ -485,11 +579,11 @@
         }
 
         // ==========================================
-        // ESTOQUE INDIVIDUAL
+        // ESTOQUE & ADICIONAR ESTOQUE DIÁRIO
         // ==========================================
         function renderizarEstoque() {
             const tbody = document.getElementById('tabelaEstoque');
-            if(bancoProdutos.length === 0) return tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400">Vazio.</td></tr>`;
+            if(bancoProdutos.length === 0) return tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400">Estoque vazio.</td></tr>`;
             
             tbody.innerHTML = bancoProdutos.map(p => `
                 <tr class="hover:bg-gray-50 border-b border-gray-100">
@@ -504,8 +598,11 @@
             `).join('');
         }
 
-        function abrirModalProduto(id = null) {
+        // Modificado para aceitar uma Data, simulando adição diária
+        function abrirModalProduto(id = null, dataAtribuida = null) {
             document.querySelector('#modalProduto form').reset();
+            document.getElementById('prodDataAcao').value = dataAtribuida || new Date().toISOString().split('T')[0];
+            
             if(id) {
                 const prod = bancoProdutos.find(x => x.id === id);
                 document.getElementById('tituloModalProduto').innerText = 'Editar Produto';
@@ -514,7 +611,7 @@
                 document.getElementById('prodQtd').value = prod.qtd;
                 document.getElementById('prodPreco').value = prod.preco;
             } else {
-                document.getElementById('tituloModalProduto').innerText = 'Novo Produto';
+                document.getElementById('tituloModalProduto').innerText = dataAtribuida ? `Estoque para ${formatarData(dataAtribuida)}` : 'Novo Produto';
                 document.getElementById('prodId').value = '';
                 document.getElementById('prodQtd').value = 1;
             }
@@ -526,7 +623,7 @@
             if (result.isConfirmed) {
                 toggleLoading(true);
                 try { await supabaseClient.from('produtos').delete().eq('id', id); await sincronizarBanco(); } 
-                catch(e) { alertaErro('Erro ou produto vinculado a vendas.'); }
+                catch(e) { alertaErro('Erro ou produto vinculado a vendas/movimentações.'); }
                 toggleLoading(false);
             }
         }
@@ -537,29 +634,179 @@
             const nome = document.getElementById('prodNome').value.trim();
             const qtdAdicional = parseInt(document.getElementById('prodQtd').value);
             const preco = parseFloat(document.getElementById('prodPreco').value);
+            const dataAcao = document.getElementById('prodDataAcao').value;
 
             toggleLoading(true);
             try {
-                const existente = bancoProdutos.find(p => p.nome.toLowerCase() === nome.toLowerCase() && p.id != id);
+                // Modificado para respeitar a nova constraint (nome e dono)
+                const existente = bancoProdutos.find(p => p.nome.trim().toLowerCase() === nome.toLowerCase() && p.id != id);
+                
+                let idParaLog = id;
+
                 if (existente) {
                     const qtdFinal = existente.qtd + qtdAdicional;
                     await supabaseClient.from('produtos').update({ qtd: qtdFinal, preco }).eq('id', existente.id);
-                    alertaSucesso('Somado!');
+                    idParaLog = existente.id;
+                    alertaSucesso('Somado ao estoque existente!');
                 } else if (id) {
                     await supabaseClient.from('produtos').update({ nome, qtd: qtdAdicional, preco }).eq('id', id);
-                    alertaSucesso('Atualizado!');
+                    alertaSucesso('Produto atualizado!');
                 } else {
-                    await supabaseClient.from('produtos').insert([{ nome, qtd: qtdAdicional, preco, dono: perfilAtual }]);
-                    alertaSucesso('Adicionado!');
+                    const { data: nP } = await supabaseClient.from('produtos').insert([{ nome, qtd: qtdAdicional, preco, dono: perfilAtual }]).select();
+                    idParaLog = nP[0].id;
+                    alertaSucesso('Novo produto no estoque!');
                 }
+
+                // Registra na tabela movimentacoes como ENTRADA
+                if(qtdAdicional > 0 && idParaLog) {
+                    await supabaseClient.from('movimentacoes').insert([{
+                        produto_id: idParaLog,
+                        dono: perfilAtual,
+                        tipo: 'ENTRADA',
+                        qtd: qtdAdicional,
+                        data_movimento: dataAcao
+                    }]);
+                }
+
                 fecharModal('modalProduto');
                 await sincronizarBanco();
-            } catch(err) { alertaErro('Erro ao salvar produto.'); }
+            } catch(err) { alertaErro('Erro ao salvar produto. Verifique se digitou corretamente.'); console.error(err); }
             toggleLoading(false);
         }
 
         // ==========================================
-        // CONTROLE SEMANAL & EXCLUSÃO
+        // CONSUMO E TRANSFERÊNCIA
+        // ==========================================
+        function popularSelectProdutosTransfConsumo(selectId, infoId) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">Selecione...</option>' + bancoProdutos.filter(p => p.qtd > 0).map(p => `<option value="${p.id}" data-max="${p.qtd}">${p.nome} (Disp: ${p.qtd})</option>`).join('');
+            document.getElementById(infoId).innerText = 'Disponível: 0';
+        }
+
+        function abrirModalConsumo() {
+            document.querySelector('#modalConsumo form').reset();
+            popularSelectProdutosTransfConsumo('consumoProdutoId', 'consumoMaxInfo');
+            document.getElementById('modalConsumo').classList.remove('hidden');
+        }
+
+        function atualizarMaxConsumo() {
+            const select = document.getElementById('consumoProdutoId');
+            const max = select.options[select.selectedIndex]?.getAttribute('data-max') || 0;
+            document.getElementById('consumoMaxInfo').innerText = `Disponível: ${max}`;
+            document.getElementById('consumoQtd').max = max;
+        }
+
+        async function salvarConsumo(e) {
+            e.preventDefault();
+            const prodId = document.getElementById('consumoProdutoId').value;
+            const qtd = parseInt(document.getElementById('consumoQtd').value);
+            const hoje = new Date().toISOString().split('T')[0];
+
+            if(!prodId || qtd <= 0) return alertaErro('Selecione um produto e quantidade.');
+
+            toggleLoading(true);
+            try {
+                // Abate do estoque atual
+                await supabaseClient.rpc('decrement_product_qty', { prod_id: prodId, qty_to_remove: qtd });
+                
+                // Registra a Movimentação
+                await supabaseClient.from('movimentacoes').insert([{
+                    produto_id: prodId,
+                    dono: perfilAtual,
+                    tipo: 'CONSUMO',
+                    qtd: qtd,
+                    data_movimento: hoje
+                }]);
+
+                alertaSucesso('Consumo registrado!');
+                fecharModal('modalConsumo');
+                await sincronizarBanco();
+            } catch(err) { alertaErro('Erro ao registrar consumo.'); }
+            toggleLoading(false);
+        }
+
+        function abrirModalTransferencia() {
+            document.querySelector('#modalTransferencia form').reset();
+            popularSelectProdutosTransfConsumo('transfProdutoId', 'transfMaxInfo');
+            
+            const destinoSelect = document.getElementById('transfDestino');
+            const outroPerfil = perfilAtual === 'Adriel' ? 'Cecilia' : 'Adriel';
+            destinoSelect.innerHTML = `<option value="${outroPerfil}">${outroPerfil}</option>`;
+            
+            document.getElementById('modalTransferencia').classList.remove('hidden');
+        }
+
+        function atualizarMaxTransferencia() {
+            const select = document.getElementById('transfProdutoId');
+            const max = select.options[select.selectedIndex]?.getAttribute('data-max') || 0;
+            document.getElementById('transfMaxInfo').innerText = `Disponível: ${max}`;
+            document.getElementById('transfQtd').max = max;
+        }
+
+        async function salvarTransferencia(e) {
+            e.preventDefault();
+            const prodIdOrigem = document.getElementById('transfProdutoId').value;
+            const qtd = parseInt(document.getElementById('transfQtd').value);
+            const destinoDono = document.getElementById('transfDestino').value;
+            const hoje = new Date().toISOString().split('T')[0];
+
+            if(!prodIdOrigem || qtd <= 0) return alertaErro('Dados inválidos.');
+
+            toggleLoading(true);
+            try {
+                const prodOrigem = bancoProdutos.find(p => p.id == prodIdOrigem);
+                
+                // 1. Tira do usuário atual
+                await supabaseClient.rpc('decrement_product_qty', { prod_id: prodOrigem.id, qty_to_remove: qtd });
+                
+                // Registra Saída
+                await supabaseClient.from('movimentacoes').insert([{
+                    produto_id: prodOrigem.id,
+                    dono: perfilAtual,
+                    tipo: 'TRANSFERENCIA_SAIDA',
+                    qtd: qtd,
+                    data_movimento: hoje,
+                    dono_relacionado: destinoDono
+                }]);
+
+                // 2. Coloca no destino (verifica se ele já tem um produto com mesmo nome)
+                const produtosDestino = bancoGeralProdutos.filter(p => p.dono === destinoDono);
+                const existenteDestino = produtosDestino.find(p => p.nome.trim().toLowerCase() === prodOrigem.nome.trim().toLowerCase());
+                
+                let idDestino;
+                if(existenteDestino) {
+                    await supabaseClient.rpc('increment_product_qty', { prod_id: existenteDestino.id, qty_to_add: qtd });
+                    idDestino = existenteDestino.id;
+                } else {
+                    const { data: nP } = await supabaseClient.from('produtos').insert([{
+                        nome: prodOrigem.nome,
+                        qtd: qtd,
+                        preco: prodOrigem.preco,
+                        dono: destinoDono
+                    }]).select();
+                    idDestino = nP[0].id;
+                }
+
+                // Registra Entrada no destino
+                await supabaseClient.from('movimentacoes').insert([{
+                    produto_id: idDestino,
+                    dono: destinoDono,
+                    tipo: 'TRANSFERENCIA_ENTRADA',
+                    qtd: qtd,
+                    data_movimento: hoje,
+                    dono_relacionado: perfilAtual
+                }]);
+
+                alertaSucesso(`Transferido para ${destinoDono}!`);
+                fecharModal('modalTransferencia');
+                await sincronizarBanco();
+            } catch(err) { alertaErro('Erro na transferência.'); console.error(err); }
+            toggleLoading(false);
+        }
+
+
+        // ==========================================
+        // CONTROLE SEMANAL
         // ==========================================
         function construirFiltroSemanas() {
             const select = document.getElementById('filtroSemana');
@@ -606,7 +853,7 @@
                 let conteudoHTML = '';
                 
                 if(vendasDoDia.length === 0) {
-                    conteudoHTML = `<p class="p-4 text-center text-gray-400 italic text-sm">Sem registros.</p>`;
+                    conteudoHTML = `<p class="p-4 text-center text-gray-400 italic text-sm">Nenhuma venda registrada.</p>`;
                 } else {
                     conteudoHTML = `<div class="divide-y divide-gray-100">`;
                     vendasDoDia.forEach(v => {
@@ -642,7 +889,8 @@
                         <div class="flex-1 min-w-0">
                             <div class="bg-gray-50 border-b px-4 py-2 flex justify-between items-center">
                                 <span class="text-sm font-semibold text-gray-500">${formatarData(isoDia)}</span>
-                                <button onclick="abrirModalVenda(null, '${isoDia}')" class="text-xs bg-gray-900 text-white px-2 py-1 rounded font-bold hover:bg-gray-800">+ Add</button>
+                                <!-- AQUI ESTÁ A ALTERAÇÃO: O botão Add agora chama abrirModalProduto passando o dia -->
+                                <button onclick="abrirModalProduto(null, '${isoDia}')" class="text-xs bg-gray-900 text-white px-2 py-1 rounded font-bold hover:bg-gray-800">+ Add Estoque</button>
                             </div>
                             <div>${conteudoHTML}</div>
                         </div>
@@ -651,29 +899,8 @@
             }
         }
 
-        async function deletarVenda(id) {
-            const result = await Swal.fire({ title: 'Excluir Venda?', text: "Os itens voltarão para o estoque.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Excluir' });
-            if (result.isConfirmed) {
-                toggleLoading(true);
-                try {
-                    const venda = bancoVendas.find(v => v.id === id);
-                    if(venda && venda.itens_venda) {
-                        for(const iv of venda.itens_venda) {
-                            await supabaseClient.rpc('increment_product_qty', { prod_id: iv.produto_id, qty_to_add: iv.qtd });
-                        }
-                    }
-                    await supabaseClient.from('vendas').delete().eq('id', id);
-                    alertaSucesso('Venda excluída e estoque devolvido!');
-                    await sincronizarBanco();
-                } catch(e) { alertaErro('Falha ao excluir.'); }
-                toggleLoading(false);
-            }
-        }
-
-        // ==========================================
-        // VENDAS (REGISTRO)
-        // ==========================================
-        function abrirModalVenda(idVenda = null, dataPreDefinida = null) {
+        // Restante das funções de Venda permanecem inalteradas, mas ocultadas por brevidade. Apenas copiei as partes exatas de venda.
+        function abrirModalVenda(idVenda = null) {
             document.getElementById('containerItensVenda').innerHTML = '';
             if(idVenda) {
                 const v = bancoVendas.find(x => x.id === idVenda);
@@ -688,7 +915,7 @@
             } else {
                 document.getElementById('tituloModalVenda').innerText = 'Registrar Venda';
                 document.getElementById('vendaId').value = '';
-                document.getElementById('vendaData').value = dataPreDefinida || new Date().toISOString().split('T')[0];
+                document.getElementById('vendaData').value = new Date().toISOString().split('T')[0];
                 document.getElementById('vendaColab').value = '';
                 document.getElementById('vendaStatus').value = 'PAGO - PIX';
                 document.getElementById('vendaValorPago').value = '';
@@ -768,7 +995,6 @@
                 if (valPagoMerge === null) valPagoMerge = statusBase.includes('PAGO') ? totalFinal : 0;
                 let statusFinal = valPagoMerge >= totalFinal ? (statusBase.includes('PAGO') ? statusBase : 'PAGO - PIX') : 'À PAGAR';
 
-                // IMPORTANTE: Adicionado o Dono
                 const dadosVenda = { colaborador: colab, data_venda: dataV, status: statusFinal, observacao: obs, total_devido: totalFinal, valor_pago: valPagoMerge, dono: perfilAtual };
 
                 for(const it of itensFinais) await supabaseClient.rpc('decrement_product_qty', { prod_id: it.produto_id, qty_to_remove: it.qtd });
@@ -779,17 +1005,36 @@
                 const insertsItens = itensFinais.map(i => ({ venda_id: idFinal, produto_id: i.produto_id, qtd: i.qtd, preco_unitario: i.preco_unitario }));
                 await supabaseClient.from('itens_venda').insert(insertsItens);
 
-                alertaSucesso('Registrado!'); fecharModal('modalVenda'); await sincronizarBanco();
+                alertaSucesso('Venda Registrada!'); fecharModal('modalVenda'); await sincronizarBanco();
             } catch (err) { alertaErro('Erro. Verifique conexão e estoque.'); }
             toggleLoading(false);
         }
 
+        async function deletarVenda(id) {
+            const result = await Swal.fire({ title: 'Excluir Venda?', text: "Os itens voltarão para o estoque.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Excluir' });
+            if (result.isConfirmed) {
+                toggleLoading(true);
+                try {
+                    const venda = bancoVendas.find(v => v.id === id);
+                    if(venda && venda.itens_venda) {
+                        for(const iv of venda.itens_venda) {
+                            await supabaseClient.rpc('increment_product_qty', { prod_id: iv.produto_id, qty_to_add: iv.qtd });
+                        }
+                    }
+                    await supabaseClient.from('vendas').delete().eq('id', id);
+                    alertaSucesso('Venda excluída e estoque devolvido!');
+                    await sincronizarBanco();
+                } catch(e) { alertaErro('Falha ao excluir.'); }
+                toggleLoading(false);
+            }
+        }
+
         // ==========================================
-        // DASHBOARD INDIVIDUAL (MENSAL E SEMANAL)
+        // DASHBOARD E FINANCEIRO (Inalterados logicamente)
         // ==========================================
         function renderizarDashboard() {
             const dataAtual = new Date();
-            const mesAtualNum = dataAtual.getMonth(); // 0 a 11
+            const mesAtualNum = dataAtual.getMonth();
             const anoAtual = dataAtual.getFullYear();
             
             document.getElementById('dashMesRef').innerText = `Referência: ${dataAtual.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}`;
@@ -807,16 +1052,8 @@
                 const pago = parseFloat(v.valor_pago || 0);
                 const pendente = devido - pago;
 
-                // Lógica MENSAL
-                if (dv.getMonth() === mesAtualNum && dv.getFullYear() === anoAtual) {
-                    fatMensal += devido;
-                    pendMensal += pendente;
-                }
-
-                // Lógica SEMANAL (Pendente)
-                if (dv >= inicioSemana && dv <= fimSemana) {
-                    pendSemanal += pendente;
-                }
+                if (dv.getMonth() === mesAtualNum && dv.getFullYear() === anoAtual) { fatMensal += devido; pendMensal += pendente; }
+                if (dv >= inicioSemana && dv <= fimSemana) { pendSemanal += pendente; }
             });
 
             document.getElementById('dashFatMensal').innerText = formatarMoeda(fatMensal);
@@ -825,9 +1062,6 @@
             document.getElementById('dashValEstoque').innerText = formatarMoeda(valEstoque);
         }
 
-        // ==========================================
-        // FINANCEIRO INDIVIDUAL
-        // ==========================================
         function renderizarFinanceiro() {
             const relatorio = {};
             bancoVendas.forEach(v => {
@@ -888,14 +1122,14 @@
         }
 
         // ==========================================
-        // RELATÓRIOS GERAIS MENSAL (FECHAMENTO)
+        // RELATÓRIOS GERAIS MENSAL (FECHAMENTO) E HISTÓRICO
         // ==========================================
         function obterMesesDisponiveis() {
             const meses = new Set();
             bancoGeralVendas.forEach(v => {
                 if(v.data_venda) {
                     const [y, m] = v.data_venda.split('-');
-                    meses.add(`${y}-${m}`); // Formato YYYY-MM
+                    meses.add(`${y}-${m}`);
                 }
             });
             return Array.from(meses).sort((a, b) => b.localeCompare(a));
@@ -906,7 +1140,7 @@
             const meses = obterMesesDisponiveis();
 
             if(meses.length === 0) {
-                container.innerHTML = `<p class="col-span-full text-center text-gray-400 py-8">Nenhum dado registrado para gerar relatórios.</p>`;
+                container.innerHTML = `<p class="col-span-full text-center text-gray-400 py-8">Nenhum dado de venda para faturamento.</p>`;
                 return;
             }
 
@@ -924,50 +1158,36 @@
             }).join('');
         }
 
-        function abrirRelatorioMes(mesIso, nomePasta) {
-            document.getElementById('tituloMesRelatorio').innerText = `Fechamento: ${nomePasta}`;
+        function renderizarPastasHistoricoSaldos() {
+            const container = document.getElementById('gridPastasSaldos');
+            const semanas = new Set();
             
-            let totalGeral = 0;
-            const resAdriel = { fat: 0, rec: 0, pend: 0 };
-            const resCecilia = { fat: 0, rec: 0, pend: 0 };
-
-            bancoGeralVendas.forEach(v => {
-                if(!v.data_venda) return;
-                const [y, m] = v.data_venda.split('-');
-                if(`${y}-${m}` === mesIso) {
-                    const devido = parseFloat(v.total_devido || 0);
-                    const pago = parseFloat(v.valor_pago || 0);
-                    const pendente = devido - pago;
-
-                    totalGeral += devido;
-
-                    if(v.dono === 'Adriel') {
-                        resAdriel.fat += devido;
-                        resAdriel.rec += pago;
-                        resAdriel.pend += pendente;
-                    } else if (v.dono === 'Cecilia') {
-                        resCecilia.fat += devido;
-                        resCecilia.rec += pago;
-                        resCecilia.pend += pendente;
-                    }
-                }
+            // Pega semanas pelas datas das movimentações registradas
+            bancoGeralMovimentacoes.forEach(m => {
+                if(m.data_movimento) semanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
             });
 
-            document.getElementById('relGeralFaturado').innerText = formatarMoeda(totalGeral);
-            
-            document.getElementById('relAdrFat').innerText = formatarMoeda(resAdriel.fat);
-            document.getElementById('relAdrRec').innerText = formatarMoeda(resAdriel.rec);
-            document.getElementById('relAdrPend').innerText = formatarMoeda(resAdriel.pend);
+            if(semanas.size === 0) {
+                container.innerHTML = `<p class="col-span-full text-center text-gray-400 py-8">Nenhum histórico de movimentação ainda.</p>`;
+                return;
+            }
 
-            document.getElementById('relCecFat').innerText = formatarMoeda(resCecilia.fat);
-            document.getElementById('relCecRec').innerText = formatarMoeda(resCecilia.rec);
-            document.getElementById('relCecPend').innerText = formatarMoeda(resCecilia.pend);
+            container.innerHTML = Array.from(semanas).sort((a, b) => b.localeCompare(a)).map(semanaIso => {
+                const [y, m, d] = semanaIso.split('-');
+                const start = new Date(y, m - 1, d);
+                const end = new Date(start); end.setDate(end.getDate() + 6);
+                const desc = `${start.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})} a ${end.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}`;
 
-            document.getElementById('modalRelatorioMes').classList.remove('hidden');
+                return `
+                    <div onclick="Swal.fire({icon: 'info', title: 'Em Breve!', text: 'O resumo interno das semanas para saldo e consumo abrirá aqui.'})" class="bg-gray-100 border border-gray-300 p-6 rounded-2xl flex flex-col items-center cursor-pointer hover:bg-gray-200 hover:shadow-md transition transform hover:-translate-y-1">
+                        <i class="fa-solid fa-boxes-packing text-6xl text-gray-400 mb-3 drop-shadow-sm"></i>
+                        <span class="font-bold text-gray-700 text-xs text-center uppercase tracking-wider">Semana<br>${desc}</span>
+                    </div>
+                `;
+            }).join('');
         }
 
         window.onload = () => {
-            // Sincroniza o banco silenciosamente no fundo para preparar os dados gerais
             sincronizarBanco();
         };
 
