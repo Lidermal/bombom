@@ -1162,9 +1162,11 @@
     const container = document.getElementById('gridPastasSaldos');
     const semanas = new Set();
     
-    // Identifica semanas únicas nas movimentações
+    // Filtra movimentações pelo perfil logado
     bancoGeralMovimentacoes.forEach(m => {
-        if(m.data_movimento) semanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
+        if(m.data_movimento && m.dono === perfilAtual) {
+            semanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
+        }
     });
 
     if(semanas.size === 0) {
@@ -1173,31 +1175,47 @@
     }
 
     container.innerHTML = '';
+    
     for (const semanaIso of Array.from(semanas).sort((a, b) => b.localeCompare(a))) {
         const [y, m, d] = semanaIso.split('-');
         const start = new Date(y, m - 1, d);
         const desc = start.toLocaleDateString('pt-BR');
 
-        // Cria o card da semana
+        // Cria o card
         const card = document.createElement('div');
-        card.className = "bg-white border rounded-2xl p-6 shadow-sm";
+        card.className = "bg-white border border-gray-200 rounded-2xl p-6 shadow-sm";
         card.innerHTML = `
-            <h4 class="font-bold text-lg mb-4 text-indigo-900">Semana: ${desc}</h4>
-            <div id="conteudo-semana-${semanaIso}" class="text-sm text-gray-600 mb-4">Calculando saldos...</div>
-            <div class="flex space-x-3">
-                <button onclick="abrirModalTransferencia('${semanaIso}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700">Transferir</button>
-                <button onclick="abrirModalConsumo('${semanaIso}')" class="flex-1 bg-orange-500 text-white py-2 rounded-lg font-bold hover:bg-orange-600">Consumir</button>
+            <div class="flex items-center mb-4 border-b pb-3">
+                <i class="fa-solid fa-folder-open text-indigo-400 mr-3"></i>
+                <h4 class="font-bold text-gray-800">Semana: ${desc}</h4>
+            </div>
+            <div id="conteudo-semana-${semanaIso}" class="space-y-2 mb-4">
+                <p class="text-xs text-gray-400 italic">Calculando saldos...</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="abrirModalTransferencia('${semanaIso}')" class="flex-1 bg-blue-50 text-blue-700 py-2 rounded-lg font-bold text-xs hover:bg-blue-100">Transferir</button>
+                <button onclick="abrirModalConsumo('${semanaIso}')" class="flex-1 bg-orange-50 text-orange-700 py-2 rounded-lg font-bold text-xs hover:bg-orange-100">Consumir</button>
             </div>
         `;
         container.appendChild(card);
 
-        // Busca o saldo consolidado dessa semana para este perfil
-        const { data: saldoData } = await supabaseClient
-            .rpc('fechar_semana_produto', { prod_id: bancoProdutos[0]?.id || 0, semana_start: semanaIso }); // Exemplo simplificado
+        // Lógica de cálculo: Para cada produto, busca o saldo dele nessa semana
+        let htmlProdutos = '';
+        for (const p of bancoProdutos) {
+            const { data: saldoData } = await supabaseClient
+                .rpc('fechar_semana_produto', { prod_id: p.id, semana_start: semanaIso });
+            
+            const saldo = saldoData && saldoData[0] ? saldoData[0].saldo_final : 0;
+            if (saldo > 0) {
+                htmlProdutos += `
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">${p.nome}</span>
+                        <span class="font-bold text-gray-900">${saldo} un</span>
+                    </div>`;
+            }
+        }
         
-        // Renderiza os produtos dessa semana aqui
-        // (Dica: Aqui você iteraria sobre seus produtos e mostraria o Saldo Final)
-        document.getElementById(`conteudo-semana-${semanaIso}`).innerHTML = "Clique para ver detalhes ou usar as ações abaixo.";
+        document.getElementById(`conteudo-semana-${semanaIso}`).innerHTML = htmlProdutos || '<p class="text-xs text-gray-400">Sem saldo restante.</p>';
     }
 }
         // ==========================================
