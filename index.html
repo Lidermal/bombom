@@ -1186,7 +1186,83 @@
                 `;
             }).join('');
         }
+        // ==========================================
+        // FILTRO DE SEMANAS CORRIGIDO
+        // ==========================================
+        function construirFiltroSemanas() {
+            const select = document.getElementById('filtroSemana');
+            select.innerHTML = '';
+            const setSemanas = new Set();
+            const atualIso = obterInicioSemana(new Date()).toISOString().split('T')[0];
+            setSemanas.add(atualIso);
 
+            // Busca semanas que tiveram vendas
+            bancoVendas.forEach(v => {
+                if(v.data_venda) setSemanas.add(obterInicioSemana(new Date(v.data_venda + 'T12:00:00')).toISOString().split('T')[0]);
+            });
+
+            // NOVO: Busca semanas que tiveram adição de estoque/movimentações
+            bancoGeralMovimentacoes.forEach(m => {
+                if(m.data_movimento && m.dono === perfilAtual) {
+                    setSemanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
+                }
+            });
+
+            Array.from(setSemanas).sort((a,b) => new Date(b) - new Date(a)).forEach(isoStr => {
+                const [y, m, d] = isoStr.split('-');
+                const start = new Date(y, m - 1, d);
+                const end = new Date(start); end.setDate(end.getDate() + 6);
+                const option = document.createElement('option');
+                option.value = isoStr;
+                option.innerText = isoStr === atualIso ? `Atual (${start.toLocaleDateString('pt-BR')})` : `${start.toLocaleDateString('pt-BR')} até ${end.toLocaleDateString('pt-BR')}`;
+                select.appendChild(option);
+            });
+        }
+
+        // ==========================================
+        // FUNÇÃO DE ABRIR O RELATÓRIO MENSAL (QUE FALTAVA)
+        // ==========================================
+        function abrirRelatorioMes(mesIso, nomePasta) {
+            document.getElementById('tituloMesRelatorio').innerText = `Fechamento: ${nomePasta}`;
+            
+            let totalGeral = 0;
+            const resAdriel = { fat: 0, rec: 0, pend: 0 };
+            const resCecilia = { fat: 0, rec: 0, pend: 0 };
+
+            bancoGeralVendas.forEach(v => {
+                if(!v.data_venda) return;
+                const [y, m] = v.data_venda.split('-');
+                if(`${y}-${m}` === mesIso) {
+                    const devido = parseFloat(v.total_devido || 0);
+                    const pago = parseFloat(v.valor_pago || 0);
+                    const pendente = devido - pago;
+
+                    totalGeral += devido;
+
+                    if(v.dono === 'Adriel') {
+                        resAdriel.fat += devido;
+                        resAdriel.rec += pago;
+                        resAdriel.pend += pendente;
+                    } else if (v.dono === 'Cecilia') {
+                        resCecilia.fat += devido;
+                        resCecilia.rec += pago;
+                        resCecilia.pend += pendente;
+                    }
+                }
+            });
+
+            document.getElementById('relGeralFaturado').innerText = formatarMoeda(totalGeral);
+            
+            document.getElementById('relAdrFat').innerText = formatarMoeda(resAdriel.fat);
+            document.getElementById('relAdrRec').innerText = formatarMoeda(resAdriel.rec);
+            document.getElementById('relAdrPend').innerText = formatarMoeda(resAdriel.pend);
+
+            document.getElementById('relCecFat').innerText = formatarMoeda(resCecilia.fat);
+            document.getElementById('relCecRec').innerText = formatarMoeda(resCecilia.rec);
+            document.getElementById('relCecPend').innerText = formatarMoeda(resCecilia.pend);
+
+            document.getElementById('modalRelatorioMes').classList.remove('hidden');
+        }
         window.onload = () => {
             sincronizarBanco();
         };
