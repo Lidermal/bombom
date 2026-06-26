@@ -1158,34 +1158,48 @@
             }).join('');
         }
 
-        function renderizarPastasHistoricoSaldos() {
-            const container = document.getElementById('gridPastasSaldos');
-            const semanas = new Set();
-            
-            // Pega semanas pelas datas das movimentações registradas
-            bancoGeralMovimentacoes.forEach(m => {
-                if(m.data_movimento) semanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
-            });
+        async function renderizarPastasHistoricoSaldos() {
+    const container = document.getElementById('gridPastasSaldos');
+    const semanas = new Set();
+    
+    // Identifica semanas únicas nas movimentações
+    bancoGeralMovimentacoes.forEach(m => {
+        if(m.data_movimento) semanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
+    });
 
-            if(semanas.size === 0) {
-                container.innerHTML = `<p class="col-span-full text-center text-gray-400 py-8">Nenhum histórico de movimentação ainda.</p>`;
-                return;
-            }
+    if(semanas.size === 0) {
+        container.innerHTML = `<p class="col-span-full text-center text-gray-400 py-8">Nenhuma movimentação registrada.</p>`;
+        return;
+    }
 
-            container.innerHTML = Array.from(semanas).sort((a, b) => b.localeCompare(a)).map(semanaIso => {
-                const [y, m, d] = semanaIso.split('-');
-                const start = new Date(y, m - 1, d);
-                const end = new Date(start); end.setDate(end.getDate() + 6);
-                const desc = `${start.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})} a ${end.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}`;
+    container.innerHTML = '';
+    for (const semanaIso of Array.from(semanas).sort((a, b) => b.localeCompare(a))) {
+        const [y, m, d] = semanaIso.split('-');
+        const start = new Date(y, m - 1, d);
+        const desc = start.toLocaleDateString('pt-BR');
 
-                return `
-                    <div onclick="Swal.fire({icon: 'info', title: 'Em Breve!', text: 'O resumo interno das semanas para saldo e consumo abrirá aqui.'})" class="bg-gray-100 border border-gray-300 p-6 rounded-2xl flex flex-col items-center cursor-pointer hover:bg-gray-200 hover:shadow-md transition transform hover:-translate-y-1">
-                        <i class="fa-solid fa-boxes-packing text-6xl text-gray-400 mb-3 drop-shadow-sm"></i>
-                        <span class="font-bold text-gray-700 text-xs text-center uppercase tracking-wider">Semana<br>${desc}</span>
-                    </div>
-                `;
-            }).join('');
-        }
+        // Cria o card da semana
+        const card = document.createElement('div');
+        card.className = "bg-white border rounded-2xl p-6 shadow-sm";
+        card.innerHTML = `
+            <h4 class="font-bold text-lg mb-4 text-indigo-900">Semana: ${desc}</h4>
+            <div id="conteudo-semana-${semanaIso}" class="text-sm text-gray-600 mb-4">Calculando saldos...</div>
+            <div class="flex space-x-3">
+                <button onclick="abrirModalTransferencia('${semanaIso}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700">Transferir</button>
+                <button onclick="abrirModalConsumo('${semanaIso}')" class="flex-1 bg-orange-500 text-white py-2 rounded-lg font-bold hover:bg-orange-600">Consumir</button>
+            </div>
+        `;
+        container.appendChild(card);
+
+        // Busca o saldo consolidado dessa semana para este perfil
+        const { data: saldoData } = await supabaseClient
+            .rpc('fechar_semana_produto', { prod_id: bancoProdutos[0]?.id || 0, semana_start: semanaIso }); // Exemplo simplificado
+        
+        // Renderiza os produtos dessa semana aqui
+        // (Dica: Aqui você iteraria sobre seus produtos e mostraria o Saldo Final)
+        document.getElementById(`conteudo-semana-${semanaIso}`).innerHTML = "Clique para ver detalhes ou usar as ações abaixo.";
+    }
+}
         // ==========================================
         // FILTRO DE SEMANAS CORRIGIDO
         // ==========================================
