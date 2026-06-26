@@ -1158,66 +1158,61 @@
             }).join('');
         }
 
-        async function renderizarPastasHistoricoSaldos() {
-    const container = document.getElementById('gridPastasSaldos');
-    const semanas = new Set();
-    
-    // Filtra movimentações pelo perfil logado
-    bancoGeralMovimentacoes.forEach(m => {
-        if(m.data_movimento && m.dono === perfilAtual) {
-            semanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
-        }
-    });
-
-    if(semanas.size === 0) {
-        container.innerHTML = `<p class="col-span-full text-center text-gray-400 py-8">Nenhuma movimentação registrada.</p>`;
-        return;
-    }
-
-    container.innerHTML = '';
-    
-    for (const semanaIso of Array.from(semanas).sort((a, b) => b.localeCompare(a))) {
-        const [y, m, d] = semanaIso.split('-');
-        const start = new Date(y, m - 1, d);
-        const desc = start.toLocaleDateString('pt-BR');
-
-        // Cria o card
-        const card = document.createElement('div');
-        card.className = "bg-white border border-gray-200 rounded-2xl p-6 shadow-sm";
-        card.innerHTML = `
-            <div class="flex items-center mb-4 border-b pb-3">
-                <i class="fa-solid fa-folder-open text-indigo-400 mr-3"></i>
-                <h4 class="font-bold text-gray-800">Semana: ${desc}</h4>
-            </div>
-            <div id="conteudo-semana-${semanaIso}" class="space-y-2 mb-4">
-                <p class="text-xs text-gray-400 italic">Calculando saldos...</p>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="abrirModalTransferencia('${semanaIso}')" class="flex-1 bg-blue-50 text-blue-700 py-2 rounded-lg font-bold text-xs hover:bg-blue-100">Transferir</button>
-                <button onclick="abrirModalConsumo('${semanaIso}')" class="flex-1 bg-orange-50 text-orange-700 py-2 rounded-lg font-bold text-xs hover:bg-orange-100">Consumir</button>
-            </div>
-        `;
-        container.appendChild(card);
-
-        // Lógica de cálculo: Para cada produto, busca o saldo dele nessa semana
-        let htmlProdutos = '';
-        for (const p of bancoProdutos) {
-            const { data: saldoData } = await supabaseClient
-                .rpc('fechar_semana_produto', { prod_id: p.id, semana_start: semanaIso });
+            async function renderizarPastasHistoricoSaldos() {
+                const container = document.getElementById('gridPastasSaldos');
+                const semanas = new Set();
+                
+                // Identifica todas as semanas existentes
+                bancoGeralMovimentacoes.forEach(m => {
+                    if(m.data_movimento && m.dono === perfilAtual) {
+                        semanas.add(obterInicioSemana(new Date(m.data_movimento + 'T12:00:00')).toISOString().split('T')[0]);
+                    }
+                });
             
-            const saldo = saldoData && saldoData[0] ? saldoData[0].saldo_final : 0;
-            if (saldo > 0) {
-                htmlProdutos += `
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600">${p.nome}</span>
-                        <span class="font-bold text-gray-900">${saldo} un</span>
-                    </div>`;
+                container.innerHTML = '';
+                
+                for (const semanaIso of Array.from(semanas).sort((a, b) => b.localeCompare(a))) {
+                    const [y, m, d] = semanaIso.split('-');
+                    const desc = new Date(y, m - 1, d).toLocaleDateString('pt-BR');
+            
+                    const card = document.createElement('div');
+                    card.className = "bg-white border border-gray-200 rounded-2xl p-6 shadow-sm";
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between mb-4 border-b pb-3">
+                            <div class="flex items-center">
+                                <i class="fa-solid fa-folder-open text-indigo-400 mr-3"></i>
+                                <h4 class="font-bold text-gray-800">Semana: ${desc}</h4>
+                            </div>
+                        </div>
+                        <div id="conteudo-semana-${semanaIso}" class="space-y-2 mb-4">
+                            <p class="text-xs text-gray-400 italic">Carregando saldo acumulado...</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="abrirModalTransferencia('${semanaIso}')" class="flex-1 bg-blue-50 text-blue-700 py-2 rounded-lg font-bold text-xs hover:bg-blue-100">Transferir</button>
+                            <button onclick="abrirModalConsumo('${semanaIso}')" class="flex-1 bg-orange-50 text-orange-700 py-2 rounded-lg font-bold text-xs hover:bg-orange-100">Consumir</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+            
+                    // A MÁGICA: Buscar saldo de TODOS os produtos até o fim desta semana
+                    let htmlProdutos = '';
+                    for (const p of bancoProdutos) {
+                        // Buscamos o saldo final (Entradas - Saídas de todo o período até esta semana)
+                        const { data: saldoTotal } = await supabaseClient
+                            .rpc('calcular_saldo_acumulado', { prod_id: p.id, data_limite: semanaIso });
+                        
+                        const saldoFinal = saldoTotal || 0; 
+                        if (saldoFinal > 0) {
+                            htmlProdutos += `
+                                <div class="flex justify-between text-sm py-1 border-b border-gray-50">
+                                    <span class="text-gray-600">${p.nome}</span>
+                                    <span class="font-bold text-indigo-600">${saldoFinal} un</span>
+                                </div>`;
+                        }
+                    }
+                    document.getElementById(`conteudo-semana-${semanaIso}`).innerHTML = htmlProdutos || '<p class="text-xs text-gray-400">Sem estoque neste período.</p>';
+                }
             }
-        }
-        
-        document.getElementById(`conteudo-semana-${semanaIso}`).innerHTML = htmlProdutos || '<p class="text-xs text-gray-400">Sem saldo restante.</p>';
-    }
-}
         // ==========================================
         // FILTRO DE SEMANAS CORRIGIDO
         // ==========================================
