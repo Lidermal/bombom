@@ -71,6 +71,13 @@
             background: linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%);
             border: 2px dashed #e5e7eb;
         }
+        
+        /* Botão Desabilitado */
+        .btn-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex min-h-screen font-sans overflow-hidden">
@@ -978,15 +985,20 @@
                     .filter(c => c.dono === perfilAtual && c.colaborador.toLowerCase() === r.nome.toLowerCase())
                     .reduce((acc, c) => acc + parseFloat(c.valor || 0), 0);
 
+                const estaQuitado = r.pendente <= 0;
+                const classeBotao = estaQuitado ? 'btn-disabled' : '';
+                const eventoClick = estaQuitado ? '' : `onclick="abrirModalPagamento('${r.nome}', ${r.pendente})"`;
+                const eventoCredito = estaQuitado ? '' : `onclick="abrirModalCreditoRapido('${r.nome}')"`;
+
                 return `
-                <div class="bg-white rounded-xl shadow-sm border-2 ${r.pendente > 0 ? 'border-red-200' : 'border-green-200'} p-6 hover:shadow-lg transition">
+                <div class="bg-white rounded-xl shadow-sm border-2 ${estaQuitado ? 'border-green-200' : 'border-red-200'} p-6 hover:shadow-lg transition">
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h3 class="text-xl font-bold text-gray-900">${r.nome}</h3>
                             <p class="text-sm text-gray-500">${r.vendas} vendas</p>
                         </div>
-                        <span class="${r.pendente > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'} px-3 py-1 rounded-full text-xs font-bold">
-                            ${r.pendente > 0 ? 'PENDENTE' : 'QUITADO'}
+                        <span class="${estaQuitado ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} px-3 py-1 rounded-full text-xs font-bold">
+                            ${estaQuitado ? 'QUITADO' : 'PENDENTE'}
                         </span>
                     </div>
                     
@@ -1005,15 +1017,15 @@
                         </div>
                         <div class="flex justify-between pt-2 border-t">
                             <span class="text-gray-600 font-medium">Pendente</span>
-                            <span class="font-bold ${r.pendente > 0 ? 'text-red-600' : 'text-gray-400'}">${formatarMoeda(r.pendente)}</span>
+                            <span class="font-bold ${estaQuitado ? 'text-gray-400' : 'text-red-600'}">${formatarMoeda(r.pendente)}</span>
                         </div>
                     </div>
                     
                     <div class="flex gap-2">
-                        <button onclick="abrirModalPagamento('${r.nome}', ${r.pendente})" class="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition text-sm">
+                        <button ${eventoClick} class="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition text-sm ${classeBotao}">
                             <i class="fa-solid fa-money-bill mr-1"></i>Quitar
                         </button>
-                        <button onclick="abrirModalCreditoRapido('${r.nome}')" class="flex-1 bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700 transition text-sm">
+                        <button ${eventoCredito} class="flex-1 bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700 transition text-sm ${classeBotao}">
                             <i class="fa-solid fa-wallet mr-1"></i>Crédito
                         </button>
                     </div>
@@ -1430,7 +1442,7 @@
         }
 
         // ==========================================
-        // VENDAS (Funções mantidas)
+        // VENDAS (Funções mantidas com lógica de crédito)
         // ==========================================
         function abrirModalVenda(idVenda = null) {
             document.getElementById('containerItensVenda').innerHTML = '';
@@ -1524,8 +1536,39 @@
                 }
 
                 const totalFinal = itensFinais.reduce((acc, i) => acc + (i.qtd * i.preco_unitario), 0);
-                if (valPagoMerge === null) valPagoMerge = statusBase.includes('PAGO') ? totalFinal : 0;
-                let statusFinal = valPagoMerge >= totalFinal ? (statusBase.includes('PAGO') ? statusBase : 'PAGO - PIX') : 'À PAGAR';
+                
+                // LÓGICA DE CRÉDITO AUTOMÁTICO
+                let creditoUsado = 0;
+                if (statusBase === 'À PAGAR' && valPagoMerge === null) {
+                    const registroCredito = bancoGeralCreditos.find(c => 
+                        c.dono === perfilAtual && c.colaborador.toLowerCase() === colab.toLowerCase()
+                    );
+                    
+                    if (registroCredito && parseFloat(registroCredito.valor) > 0) {
+                        const saldoCredito = parseFloat(registroCredito.valor);
+                        creditoUsado = Math.min(saldoCredito, totalFinal);
+                        
+                        // Debitar do banco de dados
+                        const novoSaldoCredito = saldoCredito - creditoUsado;
+                        await supabaseClient.from('creditos_clientes').update({ valor: novoSaldoCredito }).eq('id', registroCredito.id);
+                        
+                        // Alerta visual
+                        if(creditoUsado > 0) {
+                            alertaSucesso(`Usando ${formatarMoeda(creditoUsado)} de crédito do cliente!`);
+                        }
+                    }
+                }
+
+                if (valPagoMerge === null) {
+                    // Se não foi informado valor manual, soma o automático (status base) + crédito usado
+                    const automatico = statusBase.includes('PAGO') ? totalFinal : 0;
+                    valPagoMerge = automatico + creditoUsado;
+                } else {
+                    // Se informou valor manual, adiciona o crédito usado ao pagamento
+                    valPagoMerge = parseFloat(valPagoMerge) + creditoUsado;
+                }
+
+                let statusFinal = valPagoMerge >= totalFinal ? (statusBase.includes('PAGO') ? statusBase : 'PAGO - CRÉDITO') : 'À PAGAR';
 
                 const dadosVenda = { colaborador: colab, data_venda: dataV, status: statusFinal, observacao: obs, total_devido: totalFinal, valor_pago: valPagoMerge, dono: perfilAtual };
 
