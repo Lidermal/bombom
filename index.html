@@ -311,7 +311,6 @@
     </div>
 
     <div id="modalRelatorioMes" class="fixed inset-0 bg-black bg-opacity-70 hidden z-[70] flex items-center justify-center backdrop-blur-sm p-4 fade-in">
-        <!-- (Modal Fechamento Mantido Inalterado do HTML anterior) -->
         <div class="bg-gray-50 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             <div class="bg-gray-900 p-5 border-b flex justify-between items-center shrink-0 text-white">
                 <h3 class="font-bold text-xl flex items-center"><i class="fa-regular fa-folder-open mr-3"></i> <span id="tituloMesRelatorio">Mês / Ano</span></h3>
@@ -788,6 +787,10 @@
                         const badgeClass = statusPago ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200';
                         const statusText = statusPago ? 'PAGO' : 'PENDENTE';
                         
+                        // NOVA VERIFICAÇÃO DE RESERVAS
+                        const temReserva = (v.itens_venda || []).some(iv => iv.is_reserva);
+                        const badgeReserva = temReserva ? `<span class="ml-2 text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full border border-orange-200 font-bold uppercase tracking-wider">Com Reserva</span>` : '';
+                        
                         return `
                             <div onclick="abrirModalDetalhesVenda(${v.id})" class="card-venda bg-white border-2 ${statusPago ? 'border-green-300' : 'border-red-300'} rounded-xl p-4 hover:shadow-lg transition">
                                 <div class="flex justify-between items-start mb-2">
@@ -795,7 +798,10 @@
                                     <span class="${badgeClass} text-xs px-2 py-1 rounded-full font-bold border">${statusText}</span>
                                 </div>
                                 <div class="text-2xl font-bold text-gray-900 mb-2">${formatarMoeda(dev)}</div>
-                                <div class="text-xs text-gray-500">${(v.itens_venda || []).length} itens</div>
+                                <div class="text-xs text-gray-500 flex items-center">
+                                    <span>${(v.itens_venda || []).length} itens</span>
+                                    ${badgeReserva}
+                                </div>
                             </div>
                         `;
                     }).join('');
@@ -1003,7 +1009,7 @@
 
                 const estaQuitado = r.pendente <= 0;
                 
-                // ALTERAÇÃO AQUI: Botão de Crédito sempre ativo!
+                // Botão de Crédito sempre ativo
                 const classeBotaoPagamento = estaQuitado ? 'btn-disabled' : '';
                 const eventoClick = estaQuitado ? '' : `onclick="abrirModalPagamento('${r.nome}', ${r.pendente})"`;
                 const eventoCredito = `onclick="abrirModalCreditoRapido('${r.nome}')"`;
@@ -1051,7 +1057,6 @@
             `}).join('');
         }
 
-        // ... MÉTODOS DE RECIBO MANTIDOS INTÁCTOS ...
         function atualizarListaClientesRecibo() {
             const select = document.getElementById('reciboCliente');
             const colabs = [...new Set(bancoVendas.map(v => v.colaborador))].sort();
@@ -1373,7 +1378,6 @@
                 document.getElementById('vendaStatus').value = v.status.includes('PIX') ? 'PAGO - PIX' : (v.status.includes('ESPÉCIE') ? 'PAGO - ESPÉCIE' : 'À PAGAR');
                 document.getElementById('vendaValorPago').value = v.valor_pago || '';
                 document.getElementById('vendaObs').value = v.observacao || '';
-                // ALTERAÇÃO AQUI: Passando tbm a flag de reserva para popular os campos
                 if(v.itens_venda) v.itens_venda.forEach(iv => adicionarLinhaProduto(iv.produto_id, iv.qtd, iv.is_reserva));
             } else {
                 document.getElementById('tituloModalVenda').innerText = 'Registrar Venda';
@@ -1389,7 +1393,6 @@
             document.getElementById('modalVenda').classList.remove('hidden');
         }
 
-        // ALTERAÇÃO AQUI: Incluído a opção (checkbox) isReserva e lógica visual da Row
         function adicionarLinhaProduto(idProduto = '', qtd = 1, isReserva = false) {
             const container = document.getElementById('containerItensVenda');
             const div = document.createElement('div');
@@ -1415,7 +1418,6 @@
             document.querySelectorAll('#containerItensVenda > div').forEach(linha => {
                 const select = linha.querySelector('.select-prod');
                 const qtd = parseInt(linha.querySelector('.input-qtd').value) || 0;
-                // ALTERAÇÃO AQUI: Não soma itens reservados!
                 const isReserva = linha.querySelector('.check-reserva').checked;
                 
                 if(select.selectedIndex > 0 && !isReserva) {
@@ -1438,7 +1440,7 @@
             document.querySelectorAll('#containerItensVenda > div').forEach(linha => {
                 const s = linha.querySelector('.select-prod');
                 const q = parseInt(linha.querySelector('.input-qtd').value);
-                const isRes = linha.querySelector('.check-reserva').checked; // ALTERAÇÃO AQUI
+                const isRes = linha.querySelector('.check-reserva').checked;
                 if(s.value && q > 0) {
                     itensNaTela.push({ 
                         produto_id: s.value, 
@@ -1467,7 +1469,6 @@
                         itensNaTela.forEach(i => { if(mapa[i.produto_id]) mapa[i.produto_id].qtd += i.qtd; else mapa[i.produto_id] = { ...i }; });
                         itensFinais = Object.values(mapa);
                         
-                        // Recalcula o pago de itens que não eram reserva da tela
                         const itensSomadosTela = itensNaTela.filter(x => !x.is_reserva).reduce((a,i)=>a+(i.qtd*i.preco_unitario),0);
                         if (valPagoMerge === null) valPagoMerge = (parseFloat(existente.valor_pago) || 0) + (statusBase.includes('PAGO') ? itensSomadosTela : 0);
                     }
@@ -1477,7 +1478,6 @@
                     await supabaseClient.from('itens_venda').delete().eq('venda_id', idFinal);
                 }
 
-                // ALTERAÇÃO AQUI: Calcula o Total Final (somente o que NAO for reserva)
                 const totalFinal = itensFinais.filter(i => !i.is_reserva).reduce((acc, i) => acc + (i.qtd * i.preco_unitario), 0);
                 
                 let creditoUsado = 0;
@@ -1503,7 +1503,6 @@
 
                 let statusFinal = valPagoMerge >= totalFinal && totalFinal > 0 ? (statusBase.includes('PAGO') ? statusBase : 'PAGO - CRÉDITO') : 'À PAGAR';
                 
-                // Tratar se a venda INTEIRA for apenas reserva (totalFinal === 0)
                 if (totalFinal === 0) { statusFinal = 'À PAGAR'; }
 
                 const dadosVenda = { colaborador: colab, data_venda: dataV, status: statusFinal, observacao: obs, total_devido: totalFinal, valor_pago: valPagoMerge, dono: perfilAtual };
@@ -1513,7 +1512,6 @@
                 if(idFinal) await supabaseClient.from('vendas').update(dadosVenda).eq('id', idFinal);
                 else { const { data: nV } = await supabaseClient.from('vendas').insert([dadosVenda]).select(); idFinal = nV[0].id; }
 
-                // ALTERAÇÃO AQUI: Mandar no array o is_reserva
                 const insertsItens = itensFinais.map(i => ({ 
                     venda_id: idFinal, produto_id: i.produto_id, qtd: i.qtd, preco_unitario: i.preco_unitario, is_reserva: i.is_reserva || false 
                 }));
@@ -1685,7 +1683,7 @@
             toggleLoading(false);
         }
 
-        // RELATÓRIOS MANTIDOS IGUAIS
+        // RELATÓRIOS
         function obterMesesDisponiveis() {
             const meses = new Set();
             bancoGeralVendas.forEach(v => {
