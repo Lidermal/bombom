@@ -514,7 +514,6 @@
         </div>
     </div>
 
-    <!-- Modais de Transferência e Consumo Mantidos -->
     <div id="modalTransferencia" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm p-4">
         <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden">
             <div class="bg-blue-600 p-4 border-b flex justify-between items-center text-white">
@@ -843,7 +842,8 @@
             
             const dev = parseFloat(v.total_devido);
             const pg = parseFloat(v.valor_pago || 0);
-            const pendente = dev - pg;
+            const pendenteBase = dev - pg;
+            const pendenteReal = pendenteBase > 0 ? pendenteBase : 0; // Evita exibir valor negativo
             const statusPago = pg >= dev && dev > 0;
             
             conteudo.innerHTML = `
@@ -869,10 +869,10 @@
                         </div>
                     </div>
                     
-                    ${pendente > 0 ? `
+                    ${pendenteReal > 0 ? `
                         <div class="bg-red-50 border-2 border-red-200 p-4 rounded-xl">
                             <p class="text-sm text-red-600 mb-1 font-bold">Pendente</p>
-                            <p class="text-3xl font-bold text-red-700">${formatarMoeda(pendente)}</p>
+                            <p class="text-3xl font-bold text-red-700">${formatarMoeda(pendenteReal)}</p>
                         </div>
                     ` : ''}
                     
@@ -911,7 +911,7 @@
                             <i class="fa-solid fa-trash mr-2"></i>Excluir
                         </button>
                         ${!statusPago ? `
-                            <button onclick="receberPagamentoVenda('${v.colaborador}', ${pendente})" class="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition">
+                            <button onclick="receberPagamentoVenda('${v.colaborador}', ${pendenteReal})" class="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition">
                                 <i class="fa-solid fa-money-bill mr-2"></i>Receber
                             </button>
                         ` : ''}
@@ -984,7 +984,7 @@
                 const devido = parseFloat(v.total_devido), pago = parseFloat(v.valor_pago || 0);
                 relatorio[nome].total += devido; 
                 relatorio[nome].pago += pago; 
-                relatorio[nome].pendente += (devido - pago);
+                relatorio[nome].pendente += (devido - pago); // Mantém o cálculo real aqui para somar faturas sobrepostas
                 relatorio[nome].vendas++;
             });
 
@@ -996,7 +996,7 @@
             if(filtroStatus === 'pendente') {
                 arr = arr.filter(r => r.pendente > 0);
             } else if(filtroStatus === 'pago') {
-                arr = arr.filter(r => r.pendente === 0);
+                arr = arr.filter(r => r.pendente <= 0);
             }
             
             arr.sort((a,b) => b.total - a.total);
@@ -1012,10 +1012,12 @@
                     .filter(c => c.dono === perfilAtual && c.colaborador.toLowerCase() === r.nome.toLowerCase())
                     .reduce((acc, c) => acc + parseFloat(c.valor || 0), 0);
 
-                const estaQuitado = r.pendente <= 0;
+                // Zera o pendente visualmente se o saldo do cálculo for negativo (ex: pagamento a mais virou crédito)
+                const pendenteFormatado = r.pendente > 0 ? r.pendente : 0;
+                const estaQuitado = pendenteFormatado <= 0;
                 
                 const classeBotaoPagamento = estaQuitado ? 'btn-disabled' : '';
-                const eventoClick = estaQuitado ? '' : `onclick="abrirModalPagamento('${r.nome}', ${r.pendente})"`;
+                const eventoClick = estaQuitado ? '' : `onclick="abrirModalPagamento('${r.nome}', ${pendenteFormatado})"`;
                 const eventoCredito = `onclick="abrirModalCreditoRapido('${r.nome}')"`;
 
                 return `
@@ -1045,7 +1047,7 @@
                         </div>
                         <div class="flex justify-between pt-2 border-t">
                             <span class="text-gray-600 font-medium">Pendente</span>
-                            <span class="font-bold ${estaQuitado ? 'text-gray-400' : 'text-red-600'}">${formatarMoeda(r.pendente)}</span>
+                            <span class="font-bold ${estaQuitado ? 'text-gray-400' : 'text-red-600'}">${formatarMoeda(pendenteFormatado)}</span>
                         </div>
                     </div>
                     
@@ -1230,7 +1232,7 @@
         function atualizarListaClientesRecibo() {
             const select = document.getElementById('reciboCliente');
             const colabs = [...new Set(bancoVendas.map(v => v.colaborador))].sort();
-            select.innerHTML = '<option value="">Selecione...</option>' + colabs.map(c => `<option value="${c}">${c}</option>`).join('');
+            select.innerHTML = '<option value="">Selecione...</option>' + colabs.map(c => `<option value="${c}">`).join('');
             document.getElementById('areaRecibo').classList.add('hidden');
         }
 
@@ -1270,7 +1272,9 @@
             
             const totalGeral = vendasFiltradas.reduce((acc, v) => acc + parseFloat(v.total_devido), 0);
             const totalPago = vendasFiltradas.reduce((acc, v) => acc + parseFloat(v.valor_pago || 0), 0);
-            const pendente = totalGeral - totalPago;
+            
+            const pendenteCalculado = totalGeral - totalPago;
+            const pendenteVisual = pendenteCalculado > 0 ? pendenteCalculado : 0; // Evitar negativo
             
             content.innerHTML = `
                 <div class="text-center mb-6">
@@ -1310,7 +1314,7 @@
                     </div>
                     <div class="flex justify-between pt-2 border-t border-gray-300">
                         <span class="text-gray-900 font-bold">Saldo Pendente:</span>
-                        <span class="font-bold ${pendente > 0 ? 'text-red-600' : 'text-green-600'} text-xl">${formatarMoeda(pendente)}</span>
+                        <span class="font-bold ${pendenteVisual > 0 ? 'text-red-600' : 'text-green-600'} text-xl">${formatarMoeda(pendenteVisual)}</span>
                     </div>
                 </div>
                 <div class="mt-8 text-center text-sm text-gray-500">
@@ -1737,8 +1741,13 @@
                 const pago = parseFloat(v.valor_pago || 0);
                 const pendente = devido - pago;
 
-                if (dv.getMonth() === mesAtualNum && dv.getFullYear() === anoAtual) { fatMensal += devido; pendMensal += pendente; }
-                if (dv >= inicioSemana && dv <= fimSemana) { pendSemanal += pendente; }
+                if (pendente > 0) { // Soma no dashboard só pendências reais e não os saldos credores
+                    if (dv.getMonth() === mesAtualNum && dv.getFullYear() === anoAtual) { fatMensal += devido; pendMensal += pendente; }
+                    if (dv >= inicioSemana && dv <= fimSemana) { pendSemanal += pendente; }
+                } else {
+                    // Soma apenas o faturado, já que não tem pendência
+                    if (dv.getMonth() === mesAtualNum && dv.getFullYear() === anoAtual) { fatMensal += devido; }
+                }
             });
 
             document.getElementById('dashFatMensal').innerText = formatarMoeda(fatMensal);
@@ -1788,10 +1797,13 @@
                 if(!v.data_venda) return;
                 const [y, m] = v.data_venda.split('-');
                 if(`${y}-${m}` === mesIso) {
-                    const devido = parseFloat(v.total_devido || 0); const pago = parseFloat(v.valor_pago || 0); const pendente = devido - pago;
+                    const devido = parseFloat(v.total_devido || 0); const pago = parseFloat(v.valor_pago || 0); 
+                    const pendenteBruto = devido - pago;
+                    const pendenteReal = pendenteBruto > 0 ? pendenteBruto : 0; // Trata falso negativo no relatório geral
+                    
                     totalGeral += devido;
-                    if(v.dono === 'Adriel') { resAdriel.fat += devido; resAdriel.rec += pago; resAdriel.pend += pendente; } 
-                    else if (v.dono === 'Cecilia') { resCecilia.fat += devido; resCecilia.rec += pago; resCecilia.pend += pendente; }
+                    if(v.dono === 'Adriel') { resAdriel.fat += devido; resAdriel.rec += pago; resAdriel.pend += pendenteReal; } 
+                    else if (v.dono === 'Cecilia') { resCecilia.fat += devido; resCecilia.rec += pago; resCecilia.pend += pendenteReal; }
                 }
             });
 
