@@ -693,16 +693,20 @@
         async function sincronizarBanco() {
             toggleLoading(true);
             try {
-                const { data: pData } = await supabaseClient.from('produtos').select('*').order('nome');
+                const { data: pData, error: errP } = await supabaseClient.from('produtos').select('*').order('nome');
+                if(errP) throw errP;
                 bancoGeralProdutos = pData || [];
 
-                const { data: vData } = await supabaseClient.from('vendas').select('*, itens_venda(*, produto:produtos(nome))').order('data_venda', { ascending: false });
+                const { data: vData, error: errV } = await supabaseClient.from('vendas').select('*, itens_venda(*, produto:produtos(nome))').order('data_venda', { ascending: false });
+                if(errV) throw errV;
                 bancoGeralVendas = vData || [];
 
-                const { data: mData } = await supabaseClient.from('movimentacoes').select('*, produto:produtos(nome)').order('data_movimento', { ascending: false });
+                const { data: mData, error: errM } = await supabaseClient.from('movimentacoes').select('*, produto:produtos(nome)').order('data_movimento', { ascending: false });
+                if(errM) throw errM;
                 bancoGeralMovimentacoes = mData || [];
 
-                const { data: cData } = await supabaseClient.from('creditos_clientes').select('*');
+                const { data: cData, error: errC } = await supabaseClient.from('creditos_clientes').select('*');
+                if(errC) throw errC;
                 bancoGeralCreditos = cData || [];
 
                 if(perfilAtual && perfilAtual !== 'Relatorios') {
@@ -717,7 +721,10 @@
                     mudarAba('relatorios');
                 }
 
-            } catch (err) { alertaErro('Falha na comunicação com o banco.'); console.error(err); }
+            } catch (err) { 
+                alertaErro('Falha na comunicação com o banco. O RLS pode estar bloqueando a ação.'); 
+                console.error(err); 
+            }
             toggleLoading(false);
         }
 
@@ -926,7 +933,8 @@
         async function efetivarReserva(idVenda, idItemVenda) {
             toggleLoading(true);
             try {
-                await supabaseClient.from('itens_venda').update({ is_reserva: false }).eq('id', idItemVenda);
+                const { error: errUp1 } = await supabaseClient.from('itens_venda').update({ is_reserva: false }).eq('id', idItemVenda);
+                if(errUp1) throw errUp1;
 
                 const venda = bancoVendas.find(v => v.id === idVenda);
                 const item = venda.itens_venda.find(iv => iv.id === idItemVenda);
@@ -939,14 +947,15 @@
                     statusAtual = 'À PAGAR';
                 }
 
-                await supabaseClient.from('vendas').update({ total_devido: novoTotalDevido, status: statusAtual }).eq('id', idVenda);
+                const { error: errUp2 } = await supabaseClient.from('vendas').update({ total_devido: novoTotalDevido, status: statusAtual }).eq('id', idVenda);
+                if (errUp2) throw errUp2;
                 
                 alertaSucesso('Reserva efetivada e valor adicionado ao débito!');
                 await sincronizarBanco();
                 fecharModalDetalhesVenda();
                 setTimeout(() => abrirModalDetalhesVenda(idVenda), 500); 
             } catch(e) {
-                alertaErro('Erro ao efetivar reserva. Verifique se o BD possui a coluna is_reserva.');
+                alertaErro('Erro ao efetivar reserva. O banco de dados pode estar negando acesso (RLS).');
                 console.error(e);
             }
             toggleLoading(false);
@@ -1179,7 +1188,9 @@
                         let nPago = parseFloat(v.valor_pago || 0) + abater;
                         let nStatus = (nPago >= parseFloat(v.total_devido)) ? `PAGO - ${metodo}` : 'À PAGAR';
 
-                        await supabaseClient.from('vendas').update({ valor_pago: nPago, status: nStatus }).eq('id', v.id);
+                        const { error: errUp } = await supabaseClient.from('vendas').update({ valor_pago: nPago, status: nStatus }).eq('id', v.id);
+                        if (errUp) throw errUp;
+                        
                         pRest -= abater;
                     }
                     alertaSucesso('Pagamento salvo!');
@@ -1207,16 +1218,20 @@
                             let nPago = parseFloat(v.valor_pago || 0) + abater;
                             let nStatus = (nPago >= parseFloat(v.total_devido)) ? `PAGO - CRÉDITO` : 'À PAGAR';
 
-                            await supabaseClient.from('vendas').update({ valor_pago: nPago, status: nStatus }).eq('id', v.id);
+                            const { error: errAbat } = await supabaseClient.from('vendas').update({ valor_pago: nPago, status: nStatus }).eq('id', v.id);
+                            if (errAbat) throw errAbat;
+                            
                             creditoDisponivelParaAbater -= abater;
                         }
                     }
 
-                    // ATUALIZA NO BANCO DE DADOS O SALDO DE CRÉDITO (Pode ser 0 se tudo foi abatido, ou o que sobrou)
+                    // ATUALIZA NO BANCO DE DADOS O SALDO DE CRÉDITO
                     if (registroExistente) {
-                        await supabaseClient.from('creditos_clientes').update({ valor: creditoDisponivelParaAbater }).eq('id', registroExistente.id);
+                        const { error: errCredUp } = await supabaseClient.from('creditos_clientes').update({ valor: creditoDisponivelParaAbater }).eq('id', registroExistente.id);
+                        if (errCredUp) throw errCredUp;
                     } else {
-                        await supabaseClient.from('creditos_clientes').insert([{ dono: perfilAtual, colaborador: colab, valor: creditoDisponivelParaAbater }]);
+                        const { error: errCredIns } = await supabaseClient.from('creditos_clientes').insert([{ dono: perfilAtual, colaborador: colab, valor: creditoDisponivelParaAbater }]);
+                        if (errCredIns) throw errCredIns;
                     }
                     
                     alertaSucesso(`Crédito atualizado! Saldo final disponível: ${formatarMoeda(creditoDisponivelParaAbater)}`);
@@ -1224,7 +1239,10 @@
                 
                 fecharModal('modalPagamento'); 
                 await sincronizarBanco();
-            } catch (e) { alertaErro('Erro na operação.'); console.error(e); }
+            } catch (e) { 
+                alertaErro('Erro na operação. Verifique as configurações de RLS da tabela.'); 
+                console.error(e); 
+            }
             toggleLoading(false);
         }
 
@@ -1404,7 +1422,11 @@
             const result = await Swal.fire({ title: 'Remover produto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Excluir', cancelButtonText: 'Cancelar' });
             if (result.isConfirmed) {
                 toggleLoading(true);
-                try { await supabaseClient.from('produtos').delete().eq('id', id); await sincronizarBanco(); } 
+                try { 
+                    const { error } = await supabaseClient.from('produtos').delete().eq('id', id); 
+                    if(error) throw error;
+                    await sincronizarBanco(); 
+                } 
                 catch(e) { alertaErro('Erro ou produto vinculado a vendas/movimentações.'); }
                 toggleLoading(false);
             }
@@ -1425,22 +1447,26 @@
 
                 if (existente) {
                     const qtdFinal = existente.qtd + qtdAdicional;
-                    await supabaseClient.from('produtos').update({ qtd: qtdFinal, preco }).eq('id', existente.id);
+                    const { error } = await supabaseClient.from('produtos').update({ qtd: qtdFinal, preco }).eq('id', existente.id);
+                    if(error) throw error;
                     idParaLog = existente.id;
                     alertaSucesso('Somado ao estoque existente!');
                 } else if (id) {
-                    await supabaseClient.from('produtos').update({ nome, qtd: qtdAdicional, preco }).eq('id', id);
+                    const { error } = await supabaseClient.from('produtos').update({ nome, qtd: qtdAdicional, preco }).eq('id', id);
+                    if(error) throw error;
                     alertaSucesso('Produto atualizado!');
                 } else {
-                    const { data: nP } = await supabaseClient.from('produtos').insert([{ nome, qtd: qtdAdicional, preco, dono: perfilAtual }]).select();
+                    const { data: nP, error } = await supabaseClient.from('produtos').insert([{ nome, qtd: qtdAdicional, preco, dono: perfilAtual }]).select();
+                    if(error) throw error;
                     idParaLog = nP[0].id;
                     alertaSucesso('Novo produto no estoque!');
                 }
 
                 if(qtdAdicional > 0 && idParaLog) {
-                    await supabaseClient.from('movimentacoes').insert([{
+                    const { error } = await supabaseClient.from('movimentacoes').insert([{
                         produto_id: idParaLog, dono: perfilAtual, tipo: 'ENTRADA', qtd: qtdAdicional, data_movimento: dataAcao
                     }]);
+                    if (error) throw error;
                 }
 
                 fecharModal('modalProduto');
@@ -1478,10 +1504,14 @@
 
             toggleLoading(true);
             try {
-                await supabaseClient.rpc('decrement_product_qty', { prod_id: prodId, qty_to_remove: qtd });
-                await supabaseClient.from('movimentacoes').insert([{ produto_id: prodId, dono: perfilAtual, tipo: 'CONSUMO', qtd: qtd, data_movimento: hoje }]);
+                const { error: err1 } = await supabaseClient.rpc('decrement_product_qty', { prod_id: prodId, qty_to_remove: qtd });
+                if (err1) throw err1;
+                
+                const { error: err2 } = await supabaseClient.from('movimentacoes').insert([{ produto_id: prodId, dono: perfilAtual, tipo: 'CONSUMO', qtd: qtd, data_movimento: hoje }]);
+                if (err2) throw err2;
+                
                 alertaSucesso('Consumo registrado!'); fecharModal('modalConsumo'); await sincronizarBanco();
-            } catch(err) { alertaErro('Erro ao registrar consumo.'); }
+            } catch(err) { alertaErro('Erro ao registrar consumo.'); console.error(err); }
             toggleLoading(false);
         }
 
@@ -1513,27 +1543,32 @@
             toggleLoading(true);
             try {
                 const prodOrigem = bancoProdutos.find(p => p.id == prodIdOrigem);
-                await supabaseClient.rpc('decrement_product_qty', { prod_id: prodOrigem.id, qty_to_remove: qtd });
+                const { error: err1 } = await supabaseClient.rpc('decrement_product_qty', { prod_id: prodOrigem.id, qty_to_remove: qtd });
+                if(err1) throw err1;
                 
-                await supabaseClient.from('movimentacoes').insert([{
+                const { error: err2 } = await supabaseClient.from('movimentacoes').insert([{
                     produto_id: prodOrigem.id, dono: perfilAtual, tipo: 'TRANSFERENCIA_SAIDA', qtd: qtd, data_movimento: hoje, dono_relacionado: destinoDono
                 }]);
+                if (err2) throw err2;
 
                 const produtosDestino = bancoGeralProdutos.filter(p => p.dono === destinoDono);
                 const existenteDestino = produtosDestino.find(p => p.nome.trim().toLowerCase() === prodOrigem.nome.trim().toLowerCase());
                 
                 let idDestino;
                 if(existenteDestino) {
-                    await supabaseClient.rpc('increment_product_qty', { prod_id: existenteDestino.id, qty_to_add: qtd });
+                    const { error: err3 } = await supabaseClient.rpc('increment_product_qty', { prod_id: existenteDestino.id, qty_to_add: qtd });
+                    if(err3) throw err3;
                     idDestino = existenteDestino.id;
                 } else {
-                    const { data: nP } = await supabaseClient.from('produtos').insert([{ nome: prodOrigem.nome, qtd: qtd, preco: prodOrigem.preco, dono: destinoDono }]).select();
+                    const { data: nP, error: err4 } = await supabaseClient.from('produtos').insert([{ nome: prodOrigem.nome, qtd: qtd, preco: prodOrigem.preco, dono: destinoDono }]).select();
+                    if(err4) throw err4;
                     idDestino = nP[0].id;
                 }
 
-                await supabaseClient.from('movimentacoes').insert([{
+                const { error: err5 } = await supabaseClient.from('movimentacoes').insert([{
                     produto_id: idDestino, dono: destinoDono, tipo: 'TRANSFERENCIA_ENTRADA', qtd: qtd, data_movimento: hoje, dono_relacionado: perfilAtual
                 }]);
+                if (err5) throw err5;
 
                 alertaSucesso(`Transferido para ${destinoDono}!`); fecharModal('modalTransferencia'); await sincronizarBanco();
             } catch(err) { alertaErro('Erro na transferência.'); console.error(err); }
@@ -1662,7 +1697,8 @@
                         creditoUsado = Math.min(saldoCredito, totalFinal);
                         
                         const novoSaldoCredito = saldoCredito - creditoUsado;
-                        await supabaseClient.from('creditos_clientes').update({ valor: novoSaldoCredito }).eq('id', registroCredito.id);
+                        const { error: errCr } = await supabaseClient.from('creditos_clientes').update({ valor: novoSaldoCredito }).eq('id', registroCredito.id);
+                        if(errCr) throw errCr;
                         
                         if(creditoUsado > 0) { alertaSucesso(`Usando ${formatarMoeda(creditoUsado)} de crédito do cliente!`); }
                     }
@@ -1683,14 +1719,21 @@
 
                 for(const it of itensFinais) await supabaseClient.rpc('decrement_product_qty', { prod_id: it.produto_id, qty_to_remove: it.qtd });
 
-                if(idFinal) await supabaseClient.from('vendas').update(dadosVenda).eq('id', idFinal);
-                else { const { data: nV } = await supabaseClient.from('vendas').insert([dadosVenda]).select(); idFinal = nV[0].id; }
+                if(idFinal) {
+                    const { error: errV1 } = await supabaseClient.from('vendas').update(dadosVenda).eq('id', idFinal);
+                    if(errV1) throw errV1;
+                } else { 
+                    const { data: nV, error: errV2 } = await supabaseClient.from('vendas').insert([dadosVenda]).select(); 
+                    if(errV2) throw errV2;
+                    idFinal = nV[0].id; 
+                }
 
                 const insertsItens = itensFinais.map(i => ({ 
                     venda_id: idFinal, produto_id: i.produto_id, qtd: i.qtd, preco_unitario: i.preco_unitario, is_reserva: i.is_reserva || false 
                 }));
                 
-                await supabaseClient.from('itens_venda').insert(insertsItens);
+                const { error: errV3 } = await supabaseClient.from('itens_venda').insert(insertsItens);
+                if (errV3) throw errV3;
 
                 alertaSucesso('Venda Registrada!'); fecharModal('modalVenda'); await sincronizarBanco();
             } catch (err) { alertaErro('Erro. Verifique conexão e estoque.'); console.error(err); }
@@ -1708,7 +1751,9 @@
                             await supabaseClient.rpc('increment_product_qty', { prod_id: iv.produto_id, qty_to_add: iv.qtd });
                         }
                     }
-                    await supabaseClient.from('vendas').delete().eq('id', id);
+                    const { error } = await supabaseClient.from('vendas').delete().eq('id', id);
+                    if (error) throw error;
+
                     alertaSucesso('Venda excluída e estoque devolvido!');
                     await sincronizarBanco();
                 } catch(e) { alertaErro('Falha ao excluir.'); }
